@@ -73,6 +73,48 @@ elements:
       status: verified
       verifiedRevision: 73de52d
 
+  - id: importer-module-f8w2
+    kind: module
+    name: Importer
+    parent: node-runtime-d3v7
+    responsibility: Plans native, Mermaid and draw.io imports for preview; imported diagram content is marked pending-review.
+    code:
+      - path: src/node/importer.ts
+        symbol: planImport
+      - path: src/node/drawio-import.ts
+        symbol: parseDrawio
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 70c2c16
+
+  - id: verify-module-u3k7
+    kind: module
+    name: Verifier
+    parent: node-runtime-d3v7
+    responsibility: Reports discrepancies between the model and the repository (code references, TS/JS imports, SQL, Compose, Terraform); never edits the model.
+    code:
+      - path: src/node/verify.ts
+        symbol: verifyModel
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 70c2c16
+
+  - id: skill-installer-c2n9
+    kind: module
+    name: Skill installer and init
+    parent: node-runtime-d3v7
+    code:
+      - path: src/node/skill.ts
+        symbol: installSkill
+      - path: src/node/init.ts
+        symbol: initModel
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 70c2c16
+
 relations:
   - id: rel-service-uses-node-c3z5
     type: depends-on
@@ -143,3 +185,75 @@ relations:
     type: writes
     from: history-module-a6p3
     to: history-entries-p4u5
+
+  - id: rel-history-uses-repo-h3j8
+    type: depends-on
+    from: history-module-a6p3
+    to: repo-access-y5b2
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Imports resolveInside (found by archflow verify)
+          ref: src/node/history.ts
+      verifiedRevision: 70c2c16
+
+  - id: rel-watcher-uses-repo-x7c4
+    type: depends-on
+    from: watcher-module-l2n8
+    to: repo-access-y5b2
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Imports resolveInside (found by archflow verify)
+          ref: src/node/watch.ts
+      verifiedRevision: 70c2c16
+
+  - id: rel-writer-uses-repo-q2v6
+    type: depends-on
+    from: writer-module-s9w4
+    to: repo-access-y5b2
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Imports resolveInside (found by archflow verify)
+          ref: src/node/writer.ts
+      verifiedRevision: 70c2c16
+
+  - id: rel-importer-uses-validator-m8d1
+    type: depends-on
+    from: importer-module-f8w2
+    to: validator-module-m2q8
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Validates the planned file set
+          ref: src/node/importer.ts
+      verifiedRevision: 70c2c16
+
+  - id: rel-verify-reads-model-k5t3
+    type: reads
+    from: verify-module-u3k7
+    to: model-files-c8d4
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Receives the loaded model and scans repository files
+          ref: src/node/verify.ts
+      verifiedRevision: 70c2c16
+
+  - id: rel-installer-uses-repo-g9k1
+    type: depends-on
+    from: skill-installer-c2n9
+    to: repo-access-y5b2
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Imports resolveInside (found by archflow verify)
+          ref: src/node/skill.ts
+      verifiedRevision: 70c2c16
