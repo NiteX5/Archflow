@@ -18,7 +18,8 @@
     "test:watch": "vitest",
     "validate:example": "node dist/cli/index.js validate --repo examples/sample",
     "dev:web": "vite",
-    "start": "node dist/cli/index.js serve"
+    "start": "node dist/cli/index.js serve",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "dependencies": {
     "yaml": "^2.9.1",
