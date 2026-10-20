@@ -21,7 +21,8 @@
     "start": "node dist/cli/index.js serve",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "package": "npm run build && node -e \"require('node:fs').mkdirSync('release',{recursive:true})\" && npm pack --pack-destination release",
-    "smoke:package": "node scripts/smoke-package.mjs"
+    "smoke:package": "node scripts/smoke-package.mjs",
+    "dev": "node scripts/dev.mjs"
   },
   "dependencies": {
     "fast-xml-parser": "^5.11.2",
