@@ -5,7 +5,8 @@ import { hashValue } from '../core/hash.js';
 import { layoutView } from '../core/layout.js';
 import { isDeleted, type Model } from '../core/model.js';
 import { entityHash, type Conflict, type Op, type OpsResult } from '../core/ops.js';
-import { SHAPES, type Element, type Relation } from '../core/schema.js';
+import { ICONS, SHAPES, type Element, type Relation } from '../core/schema.js';
+import { ICON_GLYPHS } from './components/icons.js';
 import { BUILTIN_PREFIX, deriveView, listViews, searchElements, VIEW_TYPE_LABELS } from '../core/views.js';
 import { api, RequestError, subscribeState } from './api.js';
 import { Canvas, type LayoutEntry, type Selection } from './components/Canvas.js';
@@ -420,7 +421,13 @@ function SelectionActions(props: {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-          {(style.color || style.shape) && <button onClick={() => setStyle({ color: undefined, shape: undefined })}>Reset</button>}
+          <select aria-label="Icon" value={style.icon ?? ''} onChange={(e) => setStyle({ icon: e.target.value || undefined })}>
+            <option value="">no icon</option>
+            {ICONS.map((i) => (
+              <option key={i} value={i}>{ICON_GLYPHS[i]} {i}</option>
+            ))}
+          </select>
+          {(style.color || style.shape || style.icon) && <button onClick={() => setStyle({ color: undefined, shape: undefined, icon: undefined })}>Reset</button>}
         </div>
       )}
     </div>

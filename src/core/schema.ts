@@ -225,6 +225,9 @@ export type ViewType = (typeof VIEW_TYPES)[number];
 
 export const SHAPES = ['rectangle', 'rounded', 'ellipse', 'cylinder', 'hexagon', 'document'] as const;
 
+/** Icons available for elements in views (rendered by the UI). */
+export const ICONS = ['server', 'database', 'user', 'cloud', 'queue', 'lock', 'globe', 'mobile', 'gear', 'document', 'cache', 'mail'] as const;
+
 const layoutEntrySchema = z.strictObject({
   x: z.number().finite(),
   y: z.number().finite(),
@@ -235,7 +238,7 @@ const layoutEntrySchema = z.strictObject({
 const styleEntrySchema = z.strictObject({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex color such as "#1f6feb"').optional(),
   shape: z.enum(SHAPES).optional(),
-  icon: z.string().regex(/^[a-z0-9-]+$/, 'Icons are lowercase slugs').optional(),
+  icon: z.enum(ICONS).optional(),
 });
 
 /**

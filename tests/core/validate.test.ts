@@ -309,6 +309,13 @@ describe('views', () => {
     expect(issues).toMatchObject([{ code: 'view-config', path: 'view.flow' }]);
   });
 
+  it('accepts known icons and rejects unknown ones', () => {
+    const ok = editFile('views/overview.yaml', (c) => c.replace('shape: rounded }', 'shape: rounded, icon: cloud }'));
+    expect(validateModel(ok).issues).toEqual([]);
+    const bad = editFile('views/overview.yaml', (c) => c.replace('shape: rounded }', 'shape: rounded, icon: rocket }'));
+    expect(validateModel(bad).issues[0]).toMatchObject({ path: 'view.styles.payment-provider.icon', message: 'Unsupported value "rocket"' });
+  });
+
   it('rejects invalid style values', () => {
     const files = editFile('views/overview.yaml', (c) => c.replace('#8250df', 'purple'));
     const { issues } = validateModel(files);

@@ -120,6 +120,16 @@ describe('Archflow UI', () => {
     await expect.poll(() => modelFile('systems.yaml')).toMatch(/type: integrates-with\n\s+from: payment-provider\n\s+to: customer/);
   });
 
+  it('styles an element in the current view with color, shape and icon', async () => {
+    await open(repo);
+    await page.locator('.react-flow__node', { hasText: 'Customer' }).click();
+    await page.getByLabel('Icon').selectOption('user');
+    await expect.poll(() => modelFile('views/overview.yaml')).toContain('customer: { icon: user }');
+    await page.getByLabel('Shape').selectOption('ellipse');
+    await expect.poll(() => modelFile('views/overview.yaml')).toContain('customer: { icon: user, shape: ellipse }');
+    await expect.poll(() => page.locator('.react-flow__node', { hasText: 'Customer' }).locator('.node-icon').count()).toBe(1);
+  });
+
   it('saves positions in the view file when a node is dragged', async () => {
     await open(repo);
     const node = page.locator('.react-flow__node', { hasText: 'Payment provider' });

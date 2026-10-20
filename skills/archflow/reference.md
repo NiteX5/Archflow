@@ -187,6 +187,8 @@ view:
 ```
 
 Shapes: rectangle, rounded, ellipse, cylinder, hexagon, document.
+Icons: server, database, user, cloud, queue, lock, globe, mobile, gear, document, cache, mail.
+Icons are shown in the UI; exports (SVG, PDF, Mermaid, draw.io) do not include them.
 
 ## Logical deletion
 

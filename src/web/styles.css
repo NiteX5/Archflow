@@ -165,3 +165,4 @@ pre.diff { background: var(--panel); padding: 8px; border-radius: 6px; font-size
 .warning-list ul, .import-preview ul, .findings { margin: 4px 0; padding-left: 18px; }
 .findings li { margin: 6px 0; }
 .dialog h3 { margin: 12px 0 4px; font-size: 14px; }
+.node-icon { margin-right: 4px; }
