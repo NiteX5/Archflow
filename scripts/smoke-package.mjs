@@ -15,6 +15,18 @@ const work = mkdtempSync(path.join(tmpdir(), 'archflow-smoke-'));
 const win = process.platform === 'win32';
 const npm = win ? 'npm.cmd' : 'npm';
 const bin = win ? path.join(prefix, 'archflow.cmd') : path.join(prefix, 'bin', 'archflow');
+let child;
+/** With shell: true on Windows, kill() only reaches cmd.exe; the whole tree must go. */
+function stop() {
+  if (!child || child.exitCode !== null) return;
+  if (win) {
+    try {
+      execFileSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    } catch {
+      /* already gone */
+    }
+  } else child.kill();
+}
 const run = (args, opts = {}) => execFileSync(bin, args, { encoding: 'utf8', shell: win, ...opts });
 
 try {
@@ -32,7 +44,7 @@ try {
   console.log(skill.trim());
 
   // The installed service must start, report its address and serve the built UI.
-  const child = spawn(bin, ['serve', '--repo', work, '--port', '0', '--no-open'], { shell: win });
+  child = spawn(bin, ['serve', '--repo', work, '--port', '0', '--no-open'], { shell: win });
   const url = await new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('serve did not start in time')), 15000);
     child.stdout.on('data', (d) => {
@@ -49,9 +61,14 @@ try {
   const state = await (await fetch(`${url}api/state`)).json();
   if (state.status !== 'valid') throw new Error(`unexpected state ${state.status}`);
   console.log(`serve OK at ${url}`);
-  child.kill();
   console.log('Package smoke test passed.');
+} catch (err) {
+  console.error(err instanceof Error ? err.message : err);
+  process.exitCode = 1;
 } finally {
-  rmSync(prefix, { recursive: true, force: true });
-  rmSync(work, { recursive: true, force: true });
+  stop();
+  rmSync(prefix, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 });
+  rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 });
+  // Never wait on leftover handles (e.g. a child that ignored the signal).
+  process.exit();
 }
