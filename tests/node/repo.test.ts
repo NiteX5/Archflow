@@ -13,6 +13,9 @@ import {
 } from '../../src/node/repo.js';
 import { SAMPLE_REPO } from '../helpers.js';
 
+// Creating symlinks needs extra privileges on Windows; chmod does not restrict reads there.
+const win = process.platform === 'win32';
+
 let work: string;
 let repo: string;
 
@@ -50,7 +53,7 @@ describe('resolveRepoRoot', () => {
     expect(await accessCode(resolveRepoRoot('a\0b'))).toBe('invalid-path');
   });
 
-  it.skipIf(process.getuid?.() === 0)('reports missing permissions', async () => {
+  it.skipIf(win || process.getuid?.() === 0)('reports missing permissions', async () => {
     const locked = path.join(work, 'locked');
     await mkdir(locked);
     await chmod(locked, 0o000);
@@ -72,7 +75,7 @@ describe('path confinement', () => {
     expect(resolveInside(repo, 'a/../b')).toBe(path.join(repo, 'b'));
   });
 
-  it('rejects symlinks that escape the repository', async () => {
+  it.skipIf(win)('rejects symlinks that escape the repository', async () => {
     await writeFile(path.join(work, 'secret.txt'), 'top secret');
     await symlink(path.join(work, 'secret.txt'), path.join(repo, 'link.txt'));
     expect(await accessCode(resolveInsideReal(repo, 'link.txt'))).toBe('outside-root');
@@ -94,7 +97,7 @@ describe('readModelFiles / loadModel', () => {
     expect(result.issues[0]!.message).toContain('.archflow');
   });
 
-  it('never follows symlinks inside the model directory', async () => {
+  it.skipIf(win)('never follows symlinks inside the model directory', async () => {
     await writeFile(path.join(work, 'outside.yaml'), 'elements: []\n');
     await symlink(path.join(work, 'outside.yaml'), path.join(repo, '.archflow', 'linked.yaml'));
     const result = await readModelFiles(repo);
@@ -102,7 +105,7 @@ describe('readModelFiles / loadModel', () => {
     expect(result.issues).toMatchObject([{ severity: 'warning', code: 'ignored-file', file: 'linked.yaml' }]);
   });
 
-  it('refuses a model directory that is itself a symlink', async () => {
+  it.skipIf(win)('refuses a model directory that is itself a symlink', async () => {
     const other = path.join(work, 'other');
     await cp(path.join(repo, '.archflow'), other, { recursive: true });
     await rm(path.join(repo, '.archflow'), { recursive: true });
