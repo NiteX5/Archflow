@@ -91,4 +91,17 @@ se produce modelo: quien llama conserva la última versión válida.
 
 | Unidad | Historias | Estado |
 |--------|-----------|--------|
-| U1 — Esquema, carga y validador + `archflow validate` | AM-003, AM-004, AM-005, AM-006 (modelo), AM-021 (rutas) | En curso |
+| U1 — Esquema, carga y validador + `archflow validate` | AM-003, AM-004 (validación), AM-005, AM-006 (modelo), AM-021 (rutas) | Hecho: 64 pruebas. Pendiente de fases siguientes: mostrar errores y última versión válida en la UI (AM-004/AM-011), diferenciación visual de procedencia (AM-006). |
+| U2 — Servicio local (`archflow serve`), puertos, selección de repositorio y vista general de solo lectura | AM-001, AM-002, AM-007, AM-010, AM-021 | Siguiente |
+
+### Decisiones de U1
+
+- Validación en dos pasos: si algún archivo falla estructuralmente no se
+  comprueban referencias, para no reportar referencias rotas falsas hacia
+  entidades de ese archivo.
+- Campos desconocidos son error (detecta erratas de personas y agentes); los
+  datos libres van en `metadata`.
+- Fechas como texto ISO (esquema YAML `core`), sin conversión a `Date`, para
+  que el diff de Git sea idéntico al archivo.
+- No existen migraciones porque v1 es la primera versión; una versión distinta
+  se rechaza sin modificar archivos.
