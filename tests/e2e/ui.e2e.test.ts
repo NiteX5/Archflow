@@ -1,4 +1,5 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import type { Browser, Page } from 'playwright-core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -212,6 +213,29 @@ describe('Archflow UI', () => {
     await page.getByRole('button', { name: 'Run checks' }).click();
     await expect.poll(() => page.locator('.findings').textContent()).toContain('does not exist in the repository');
     expect(await modelFile('systems.yaml')).toBe(before);
+  });
+
+  it('goes from a clean repository to an editable map updated from the files', async () => {
+    const clean = await mkdtemp(path.join(tmpdir(), 'archflow-clean-'));
+    try {
+      await open(clean);
+      await page.getByRole('button', { name: 'Create empty model' }).click();
+      await expect.poll(() => page.locator('.status').first().textContent()).toBe('valid');
+      await page.getByRole('button', { name: '+ Element' }).click();
+      await page.getByLabel('Name', { exact: true }).fill('Billing API');
+      await page.locator('.dialog select').first().selectOption('api');
+      await page.getByRole('button', { name: 'Create' }).click();
+      await expect.poll(() => page.locator('.react-flow__node', { hasText: 'Billing API' }).count()).toBe(1);
+      // An agent declares a related element directly in the files.
+      await writeFile(
+        path.join(clean, '.archflow', 'payments.yaml'),
+        'elements:\n  - id: stripe-k2v8\n    kind: external-system\n    name: Stripe\n    provenance: { source: agent, status: inferred }\n',
+      );
+      await expect.poll(() => page.locator('.react-flow__node', { hasText: 'Stripe' }).count()).toBe(1);
+      expect(await page.locator('.react-flow__node', { hasText: 'Stripe' }).locator('.badge-inferred').count()).toBe(1);
+    } finally {
+      await rm(clean, { recursive: true, force: true });
+    }
   });
 });
 
