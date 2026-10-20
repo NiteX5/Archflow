@@ -29,12 +29,14 @@ src/
   core/      Modelo, esquema, parseo y validación. Puro e isomórfico:
              sin imports de Node, reutilizable en el navegador (importación).
   node/      Acceso seguro al repositorio autorizado (rutas, lectura, límites).
-  cli/       Comando `archflow` (validate; serve en la fase 2).
-  server/    (fase 2) Servicio HTTP local, API y vigilancia de archivos.
-  web/       (fase 2) Interfaz React.
+  cli/       Comando `archflow` (serve, validate, verify, init, skill install).
+  server/    Servicio HTTP local y rutas de la API.
+  web/       Interfaz React (Vite).
 examples/    Proyecto de ejemplo con un modelo válido (etiquetado como ejemplo).
-skill/       (fase 5) Skill de Claude Code.
-tests/       Pruebas automatizadas.
+skills/      Skill de Claude Code y referencia del formato.
+scripts/     Prueba de humo del paquete distribuible.
+tests/       Pruebas unitarias, de integración (HTTP) y de navegador (e2e).
+.archflow/   Modelo de la propia arquitectura de Archflow.
 ```
 
 ## 4. Contrato del modelo
@@ -96,6 +98,37 @@ se produce modelo: quien llama conserva la última versión válida.
 | U3 — Edición desde la UI persistida en los YAML canónicos, conflictos por entidad | AM-009, AM-014 | Hecho |
 | U4 — Vigilancia de archivos, última versión válida, historial y restauración | AM-004 (UI), AM-011, AM-013 | Hecho |
 | U5 — Skill de Claude Code, `init`, `skill install` y modelo propio de Archflow | AM-012, AM-015, AM-016 | Hecho (validación del comportamiento del agente: protocolo manual en `docs/claude-code-skill.md`) |
+| U6 — Importación/exportación nativa, Mermaid y draw.io; SVG/PNG/PDF; verificación | AM-017, AM-018, AM-019, AM-020 | Hecho |
+| U7 — Paquete distribuible, prueba de humo del paquete, CI multiplataforma, documentación | AM-001 (build), criterios globales 1, 15, 16 | Hecho en Linux; CI de macOS/Windows configurado, pendiente de primera ejecución |
+
+### Decisiones posteriores
+
+- **Lienzo:** `@xyflow/react` (React Flow): zoom, desplazamiento, subflujos para
+  agrupaciones, arrastre, redimensionado y conexión entre nodos sin construirlos
+  a mano. La vista de secuencia es SVG propio.
+- **Sin framework HTTP:** `node:http` con un enrutador mínimo. Defensa frente a
+  *DNS rebinding* (Host) y peticiones entre sitios (Origin + JSON obligatorio).
+- **Escrituras:** se parte siempre de los archivos en disco recién releídos y
+  válidos, se calcula el conjunto completo, se valida entero y se escribe de
+  forma atómica (temporal + rename). El historial guarda antes/después.
+- **Conflictos:** hash por entidad (y por entrada de layout/estilo) capturado
+  al abrir el formulario; los cambios independientes se combinan.
+- **Vistas por defecto:** cada tipo de vista existe aunque no haya archivo; el
+  archivo se crea al primer cambio de presentación.
+- **Importación:** siempre con vista previa y aplicada solo sobre la misma
+  versión del modelo. Lo importado de diagramas queda `pending-review`.
+- **PDF:** generador vectorial propio (una página, Helvetica) para no añadir
+  una dependencia pesada; PNG se rasteriza en el navegador desde el SVG.
+- **Distribución:** tarball npm con `dist/` compilado y dependencias incluidas
+  (`bundleDependencies`), instalable sin red. Requiere Node.js 22. Ejecutables
+  autónomos (Node SEA) quedan como mejora futura.
+
+### Pendientes y mejoras futuras (no implementadas)
+
+- Ejecutables autónomos por plataforma.
+- Fusión campo a campo de conflictos (hoy: por entidad, con revisión humana).
+- Migraciones de esquema (no hay versión anterior a la 1).
+- Más adaptadores de verificación (otros lenguajes, ORMs).
 
 ### Decisiones de U1
 
