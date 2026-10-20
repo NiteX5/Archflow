@@ -1,0 +1,16 @@
+elements:
+  - id: orders-db
+    kind: database
+    name: Orders database
+    description: PostgreSQL.
+
+  - id: orders-table
+    kind: table
+    name: orders
+    parent: orders-db
+
+relations:
+  - id: rel-api-reads-db
+    type: reads
+    from: public-api
+    to: orders-db

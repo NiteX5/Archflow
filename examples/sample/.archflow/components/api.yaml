@@ -1,0 +1,41 @@
+elements:
+  - id: orders-module
+    kind: module
+    name: Orders module
+    parent: public-api
+    responsibility: Order creation and status.
+    rules:
+      - An order needs at least one line item.
+    code:
+      - path: apps/api/src/orders
+    notes:
+      - text: Owns the orders table; no other module writes to it.
+
+  - id: orders-repository
+    kind: repository
+    name: Orders repository
+    parent: orders-module
+    code:
+      - path: apps/api/src/orders/repository.ts
+        symbol: OrdersRepository
+
+  - id: payments-client
+    kind: component
+    name: Payments client
+    parent: public-api
+
+relations:
+  - id: rel-orders-uses-payments
+    type: depends-on
+    from: orders-module
+    to: payments-client
+
+  - id: rel-repo-writes-orders
+    type: writes
+    from: orders-repository
+    to: orders-table
+
+  - id: rel-payments-client-calls-provider
+    type: calls
+    from: payments-client
+    to: payment-provider

@@ -1,0 +1,4 @@
+view:
+  id: view-deployment
+  name: Deployment
+  type: deployment

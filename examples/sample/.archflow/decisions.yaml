@@ -1,0 +1,8 @@
+decisions:
+  - id: adr-postgres
+    title: Use PostgreSQL for orders
+    status: accepted
+    date: 2026-01-10
+    context: Orders need transactions.
+    decision: Store orders in a single PostgreSQL database.
+    relatedTo: [orders-db, orders-module]

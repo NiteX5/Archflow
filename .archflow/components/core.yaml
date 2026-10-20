@@ -1,0 +1,140 @@
+elements:
+  - id: core-library-n5w1
+    kind: library
+    name: Core library
+    responsibility: Isomorphic model schema, validation, view derivation and layout shared by the CLI, service and UI.
+    code:
+      - path: src/core
+    rules:
+      - Must not import Node APIs, so the browser can use it.
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Header comment of the schema module
+          ref: src/core/schema.ts
+      verifiedRevision: 73de52d
+
+  - id: schema-module-t6a3
+    kind: module
+    name: Schema v1
+    parent: core-library-n5w1
+    code:
+      - path: src/core/schema.ts
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 73de52d
+
+  - id: validator-module-m2q8
+    kind: module
+    name: Validator
+    parent: core-library-n5w1
+    responsibility: Atomic structural and referential validation with located issues.
+    code:
+      - path: src/core/validate.ts
+        symbol: validateModel
+    rules:
+      - A model with any error is never returned, so callers keep the last valid version.
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 73de52d
+
+  - id: views-module-g7c5
+    kind: module
+    name: Views and layout
+    parent: core-library-n5w1
+    responsibility: Derives every view from the same model and lays it out; saved positions win.
+    code:
+      - path: src/core/views.ts
+        symbol: deriveView
+      - path: src/core/layout.ts
+        symbol: layoutView
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 73de52d
+
+  - id: interchange-module-p9r5
+    kind: module
+    name: Interchange and rendering
+    parent: core-library-n5w1
+    responsibility: Native bundle, Mermaid import/export, draw.io export, SVG and PDF rendering of views.
+    code:
+      - path: src/core/interchange.ts
+        symbol: toBundle
+      - path: src/core/mermaid.ts
+        symbol: parseMermaid
+      - path: src/core/drawio.ts
+        symbol: viewToDrawio
+      - path: src/core/render.ts
+        symbol: sceneToPdf
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 70c2c16
+
+relations:
+  - id: rel-validator-uses-schema-x4h9
+    type: depends-on
+    from: validator-module-m2q8
+    to: schema-module-t6a3
+
+  - id: rel-views-uses-schema-u1k6
+    type: depends-on
+    from: views-module-g7c5
+    to: schema-module-t6a3
+
+  - id: rel-ui-uses-core-e9r2
+    type: depends-on
+    from: web-ui-z3k9
+    to: core-library-n5w1
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Imports deriveView, layoutView and schema constants
+          ref: src/web/App.tsx
+      verifiedRevision: 73de52d
+
+  - id: rel-cli-uses-core-z6b3
+    type: depends-on
+    from: archflow-cli-q7m2
+    to: core-library-n5w1
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Imports formatIssue and hasErrors (found by archflow verify)
+          ref: src/cli/main.ts
+      verifiedRevision: 70c2c16
+
+  - id: rel-service-uses-core-y4n7
+    type: depends-on
+    from: local-service-h4t8
+    to: core-library-n5w1
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Imports core types, views, rendering and interchange (found by archflow verify)
+          ref: src/server/interop.ts
+      verifiedRevision: 70c2c16
+
+  - id: rel-interchange-uses-views-e1s8
+    type: depends-on
+    from: interchange-module-p9r5
+    to: views-module-g7c5
+
+  - id: rel-interchange-uses-schema-w5q2
+    type: depends-on
+    from: interchange-module-p9r5
+    to: schema-module-t6a3
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Imports schema types and categoryOf (found by archflow verify)
+          ref: src/core/mermaid.ts
+      verifiedRevision: 70c2c16

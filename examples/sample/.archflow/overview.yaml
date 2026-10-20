@@ -1,0 +1,10 @@
+summary: >-
+  Online bookstore: a web storefront talks to a public API, which persists
+  orders in PostgreSQL and charges cards through an external payment provider.
+context: Fictional example. Not a real system.
+keyElements:
+  - web-storefront
+  - public-api
+  - orders-db
+unknowns:
+  - Retry policy for failed payment calls is not documented.

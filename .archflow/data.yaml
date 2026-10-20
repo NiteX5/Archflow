@@ -1,0 +1,25 @@
+elements:
+  - id: model-files-c8d4
+    kind: data-entity
+    name: Model files (.archflow/*.yaml)
+    description: Canonical, Git-versioned architecture model split by content type.
+    code:
+      - path: .archflow
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: File classification by location
+          ref: src/core/validate.ts
+      verifiedRevision: 73de52d
+
+  - id: history-entries-p4u5
+    kind: data-entity
+    name: History entries (.archflow/history/*.json)
+    description: Before/after contents of every change, used to compare and restore.
+    code:
+      - path: src/node/history.ts
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 73de52d
