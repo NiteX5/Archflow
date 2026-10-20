@@ -114,9 +114,8 @@ Every import is previewed (summary, warnings, validation) before it is applied.
 
 - Distributed as an npm package that needs Node.js 22; standalone executables
   are not provided yet.
-- The CI workflow runs the tests and the packaged build on Linux, macOS and
-  Windows, and the browser tests on Linux; during development everything was
-  run on Linux only.
+- CI runs the unit/integration tests and installs and exercises the packaged
+  build on Linux, macOS and Windows; browser tests run on Linux (Chromium) only.
 - PDF export uses the standard Helvetica font: characters outside Latin-1 are
   replaced by `?` and reported.
 - Mermaid import supports flowcharts and sequence diagrams; other diagram types

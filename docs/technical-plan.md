@@ -99,7 +99,7 @@ se produce modelo: quien llama conserva la última versión válida.
 | U4 — Vigilancia de archivos, última versión válida, historial y restauración | AM-004 (UI), AM-011, AM-013 | Hecho |
 | U5 — Skill de Claude Code, `init`, `skill install` y modelo propio de Archflow | AM-012, AM-015, AM-016 | Hecho (validación del comportamiento del agente: protocolo manual en `docs/claude-code-skill.md`) |
 | U6 — Importación/exportación nativa, Mermaid y draw.io; SVG/PNG/PDF; verificación | AM-017, AM-018, AM-019, AM-020 | Hecho |
-| U7 — Paquete distribuible, prueba de humo del paquete, CI multiplataforma, documentación | AM-001 (build), criterios globales 1, 15, 16 | Hecho en Linux; CI de macOS/Windows configurado, pendiente de primera ejecución |
+| U7 — Paquete distribuible, prueba de humo del paquete, CI multiplataforma, documentación | AM-001 (build), criterios globales 1, 15, 16 | Hecho: CI en verde en Linux, macOS y Windows (pruebas, paquete instalado sin red); pruebas de navegador solo en Linux |
 
 ### Decisiones posteriores
 
