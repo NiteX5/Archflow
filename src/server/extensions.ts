@@ -1,6 +1,7 @@
 import { opsRequestSchema, type OpsResult } from '../core/ops.js';
 import { formatPath } from '../core/issues.js';
 import { History, planRevert } from '../node/history.js';
+import { initModel, InitError } from '../node/init.js';
 import { watchModel, type ModelWatcher } from '../node/watch.js';
 import type { Workspace } from '../node/workspace.js';
 import { applyOps, commitFiles, freshValidSnapshot, WriteError } from '../node/writer.js';
@@ -57,6 +58,25 @@ export function serverExtensions(workspace: Workspace): { routes: Route[]; start
   };
 
   const routes: Route[] = [
+    {
+      method: 'POST',
+      path: '/api/init',
+      handler: async ({ body }) => {
+        const name = (await body()) as { name?: unknown };
+        if (typeof name?.name !== 'string') throw new HttpError(400, 'invalid-request', '"name" must be a string');
+        const projectName = name.name;
+        return workspace.exclusive(async () => {
+          if (!workspace.root) throw new HttpError(409, 'no-repo', 'No repository is open');
+          try {
+            await initModel(workspace.root, projectName);
+          } catch (err) {
+            if (err instanceof InitError) throw new HttpError(409, 'init-failed', err.message);
+            throw err;
+          }
+          return workspace.reloadUnlocked();
+        });
+      },
+    },
     {
       method: 'POST',
       path: '/api/ops',

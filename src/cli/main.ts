@@ -1,4 +1,6 @@
+import path from 'node:path';
 import { parseArgs } from 'node:util';
+import { initModel, InitError } from '../node/init.js';
 import { formatIssue, hasErrors } from '../core/index.js';
 import { loadModel, RepoAccessError, resolveRepoRoot } from '../node/repo.js';
 import { DEFAULT_PORT, FALLBACK_RANGE, PortInUseError } from '../server/listen.js';
@@ -17,6 +19,8 @@ const USAGE = `Usage:
       Start the local web UI (http://127.0.0.1 only). Without --repo, choose the repository in the UI.
   archflow validate --repo <path> [--json]
       Validate the model in <path>/.archflow.
+  archflow init --repo <path> [--name <project name>]
+      Create an empty model (manifest only). Never overwrites an existing model.
 
 Options:
   --repo <path>    Repository to open. Archflow only accesses this directory.
@@ -25,6 +29,7 @@ Options:
   --strict-port    Fail instead of falling back to another port.
   --no-open        Do not open the browser.
   --json           Print the validation result as JSON.
+  --name <name>    Project name for init (default: the directory name).
   -h, --help       Show this help.`;
 
 /** Runs the CLI and returns the process exit code (`serve` resolves once listening). */
@@ -37,6 +42,7 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
       allowNegative: true,
       options: {
         repo: { type: 'string' },
+        name: { type: 'string' },
         json: { type: 'boolean', default: false },
         port: { type: 'string' },
         'strict-port': { type: 'boolean', default: false },
@@ -62,6 +68,8 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
         return await validate(values, io);
       case 'serve':
         return await serve(values, io);
+      case 'init':
+        return await init(values, io);
       default:
         io.err(`Unknown command "${command}"\n\n${USAGE}`);
         return 2;
@@ -75,7 +83,7 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
   }
 }
 
-type Values = { repo?: string; json?: boolean; port?: string; 'strict-port'?: boolean; open?: boolean };
+type Values = { repo?: string; name?: string; json?: boolean; port?: string; 'strict-port'?: boolean; open?: boolean };
 
 async function validate(values: Values, io: CliIo): Promise<number> {
   if (!values.repo) {
@@ -105,6 +113,26 @@ async function validate(values: Values, io: CliIo): Promise<number> {
   }
   io.out(`Model invalid: ${errors} errors, ${warnings} warnings. Nothing was modified.`);
   return 1;
+}
+
+async function init(values: Values, io: CliIo): Promise<number> {
+  if (!values.repo) {
+    io.err(`"init" requires --repo <path>\n\n${USAGE}`);
+    return 2;
+  }
+  const root = await resolveRepoRoot(values.repo);
+  try {
+    const file = await initModel(root, values.name ?? path.basename(root));
+    io.out(`Created ${file}`);
+    io.out('Declare elements in the UI (archflow serve) or let Claude Code do it with the Archflow skill.');
+    return 0;
+  } catch (err) {
+    if (err instanceof InitError) {
+      io.err(err.message);
+      return 1;
+    }
+    throw err;
+  }
 }
 
 async function serve(values: Values, io: CliIo): Promise<number> {
