@@ -19,7 +19,9 @@
     "validate:example": "node dist/cli/index.js validate --repo examples/sample",
     "dev:web": "vite",
     "start": "node dist/cli/index.js serve",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts"
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "package": "npm run build && node -e \"require('node:fs').mkdirSync('release',{recursive:true})\" && npm pack --pack-destination release",
+    "smoke:package": "node scripts/smoke-package.mjs"
   },
   "dependencies": {
     "fast-xml-parser": "^5.11.2",
@@ -38,5 +40,27 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "bundleDependencies": [
+    "fast-xml-parser",
+    "yaml",
+    "zod"
+  ],
+  "keywords": [
+    "architecture",
+    "diagram",
+    "claude-code",
+    "c4",
+    "documentation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NiteX5/Archflow.git"
   }
 }
