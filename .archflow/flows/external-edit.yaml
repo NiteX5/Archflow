@@ -1,0 +1,28 @@
+flow:
+  id: flow-external-edit-z7d2
+  kind: execution
+  name: External edit reaches the UI
+  description: Claude Code (or an editor) changes a model file while Archflow is running.
+  participants: [claude-code-v9x3, watcher-module-l2n8, workspace-module-k8f1, local-service-h4t8, web-ui-z3k9]
+  steps:
+    - id: write
+      from: claude-code-v9x3
+      to: watcher-module-l2n8
+      action: Saves a file in .archflow/
+    - id: reload
+      from: watcher-module-l2n8
+      to: workspace-module-k8f1
+      action: reload() after debounce
+    - id: validate
+      from: workspace-module-k8f1
+      to: workspace-module-k8f1
+      action: Validates the whole file set
+      result: New snapshot if valid; otherwise issues and the last valid snapshot
+    - id: push
+      from: workspace-module-k8f1
+      to: local-service-h4t8
+      action: Notifies subscribers
+    - id: render
+      from: local-service-h4t8
+      to: web-ui-z3k9
+      action: Sends state over /api/events

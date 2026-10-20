@@ -1,0 +1,23 @@
+decisions:
+  - id: adr-declared-model-w3n5
+    title: The model is declared, never generated from code
+    status: accepted
+    date: 2026-10-20
+    context: Generated diagrams invent or miss relations and lose intent.
+    decision: People and agents declare the model; code analysis may only report discrepancies.
+    relatedTo: [model-files-c8d4, claude-code-v9x3]
+
+  - id: adr-yaml-files-g2k8
+    title: Multi-file YAML as the canonical format
+    status: accepted
+    date: 2026-10-20
+    decision: Several YAML files classified by location, stable IDs, presentation in views/.
+    consequences: Readable Git diffs; the yaml library keeps comments when Archflow edits files.
+    relatedTo: [model-files-c8d4, schema-module-t6a3]
+
+  - id: adr-loopback-only-c5v1
+    title: Loopback-only service with Host and Origin checks
+    status: accepted
+    date: 2026-10-20
+    decision: Listen on 127.0.0.1; reject foreign Host headers (DNS rebinding) and foreign Origins (cross-site requests).
+    relatedTo: [local-service-h4t8]

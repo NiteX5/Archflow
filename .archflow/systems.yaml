@@ -1,0 +1,113 @@
+elements:
+  - id: developer-r2p6
+    kind: actor
+    name: Developer
+    description: Person exploring and editing the architecture in the browser.
+
+  - id: claude-code-v9x3
+    kind: external-system
+    name: Claude Code
+    description: Coding agent that reads and updates the model files following the Archflow skill.
+    code:
+      - path: skills/archflow/SKILL.md
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Skill instructions for reading, updating and validating the model
+          ref: skills/archflow/SKILL.md
+      verifiedRevision: 73de52d
+
+  - id: archflow-cli-q7m2
+    kind: application
+    name: archflow CLI
+    responsibility: Commands serve, validate, init and skill install.
+    code:
+      - path: src/cli/main.ts
+        symbol: runCli
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Command dispatch in runCli
+          ref: src/cli/main.ts
+      verifiedRevision: 73de52d
+
+  - id: local-service-h4t8
+    kind: service
+    name: Local service
+    responsibility: Loopback HTTP API and static UI for one authorized repository; rejects foreign Host/Origin headers.
+    code:
+      - path: src/server
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Routes, Host/Origin checks and loopback listening
+          ref: src/server/http.ts
+        - description: Listens on 127.0.0.1 with port fallback
+          ref: src/server/listen.ts
+      verifiedRevision: 73de52d
+
+  - id: web-ui-z3k9
+    kind: web-app
+    name: Web UI
+    responsibility: Canvas, views, detail panel and editing forms; never keeps a separate copy of the model.
+    code:
+      - path: src/web
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: React app rendering derived views and sending edit operations
+          ref: src/web/App.tsx
+      verifiedRevision: 73de52d
+
+relations:
+  - id: rel-dev-uses-ui-b6n1
+    type: depends-on
+    from: developer-r2p6
+    to: web-ui-z3k9
+
+  - id: rel-dev-runs-cli-k1s5
+    type: depends-on
+    from: developer-r2p6
+    to: archflow-cli-q7m2
+
+  - id: rel-ui-calls-service-w8e2
+    type: calls
+    from: web-ui-z3k9
+    to: local-service-h4t8
+    description: JSON API under /api and server-sent events on /api/events.
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: fetch and EventSource calls
+          ref: src/web/api.ts
+      verifiedRevision: 73de52d
+
+  - id: rel-cli-starts-service-p3d7
+    type: depends-on
+    from: archflow-cli-q7m2
+    to: local-service-h4t8
+    description: archflow serve starts the service.
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: serve() calls startServer
+          ref: src/cli/main.ts
+      verifiedRevision: 73de52d
+
+  - id: rel-claude-writes-model-f5j4
+    type: writes
+    from: claude-code-v9x3
+    to: model-files-c8d4
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Section "Update the model in the same task as the code"
+          ref: skills/archflow/SKILL.md
+      verifiedRevision: 73de52d

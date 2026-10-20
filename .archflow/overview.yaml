@@ -1,0 +1,15 @@
+summary: >-
+  Archflow is a local Node.js service with a React UI. The CLI starts a
+  loopback-only HTTP service for one authorized repository; the service reads
+  the YAML model in .archflow/, validates it with the shared core library,
+  pushes it to the browser, and writes UI edits back to the same files with
+  history. Claude Code maintains the model through the bundled skill.
+context: Declared by Claude Code with the Archflow skill while building the MVP.
+keyElements:
+  - archflow-cli-q7m2
+  - local-service-h4t8
+  - web-ui-z3k9
+  - core-library-n5w1
+  - model-files-c8d4
+unknowns:
+  - Standalone executables per platform (Node SEA) are not implemented; distribution is an npm package tarball.

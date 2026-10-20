@@ -1,0 +1,24 @@
+flow:
+  id: flow-ui-edit-k4s6
+  kind: execution
+  name: Edit from the UI
+  participants: [developer-r2p6, web-ui-z3k9, local-service-h4t8, writer-module-s9w4, history-module-a6p3]
+  steps:
+    - id: edit
+      from: developer-r2p6
+      to: web-ui-z3k9
+      action: Edits an element
+    - id: post
+      from: web-ui-z3k9
+      to: local-service-h4t8
+      action: POST /api/ops with expected hashes
+    - id: apply
+      from: local-service-h4t8
+      to: writer-module-s9w4
+      action: applyOps
+      condition: Files on disk are valid and unchanged for the edited entities
+      result: Written atomically, or 409 conflict / 422 invalid with nothing written
+    - id: record
+      from: writer-module-s9w4
+      to: history-module-a6p3
+      action: Records before/after contents

@@ -1,0 +1,145 @@
+elements:
+  - id: node-runtime-d3v7
+    kind: library
+    name: Node runtime layer
+    responsibility: Filesystem access confined to the authorized repository, workspace state, writes, history and watching.
+    code:
+      - path: src/node
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 73de52d
+
+  - id: repo-access-y5b2
+    kind: module
+    name: Repository access
+    parent: node-runtime-d3v7
+    responsibility: Resolves the authorized root, blocks traversal and symlinks, enforces size limits.
+    code:
+      - path: src/node/repo.ts
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 73de52d
+
+  - id: workspace-module-k8f1
+    kind: module
+    name: Workspace
+    parent: node-runtime-d3v7
+    responsibility: Holds the last valid snapshot and serializes reloads and writes.
+    code:
+      - path: src/node/workspace.ts
+        symbol: Workspace
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 73de52d
+
+  - id: writer-module-s9w4
+    kind: module
+    name: Model writer
+    parent: node-runtime-d3v7
+    responsibility: Applies edit operations to the YAML documents, detects conflicts, validates and writes atomically.
+    code:
+      - path: src/node/writer.ts
+        symbol: applyOps
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 73de52d
+
+  - id: history-module-a6p3
+    kind: module
+    name: History store
+    parent: node-runtime-d3v7
+    code:
+      - path: src/node/history.ts
+        symbol: History
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 73de52d
+
+  - id: watcher-module-l2n8
+    kind: module
+    name: File watcher
+    parent: node-runtime-d3v7
+    responsibility: Debounced fs.watch on .archflow/ (polling fallback) that triggers reloads.
+    code:
+      - path: src/node/watch.ts
+        symbol: watchModel
+    provenance:
+      source: agent
+      status: verified
+      verifiedRevision: 73de52d
+
+relations:
+  - id: rel-service-uses-node-c3z5
+    type: depends-on
+    from: local-service-h4t8
+    to: node-runtime-d3v7
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Imports Workspace, applyOps, History and watchModel
+          ref: src/server/extensions.ts
+      verifiedRevision: 73de52d
+
+  - id: rel-cli-uses-node-q6t1
+    type: depends-on
+    from: archflow-cli-q7m2
+    to: node-runtime-d3v7
+    provenance:
+      source: agent
+      status: verified
+      evidence:
+        - description: Imports loadModel, initModel and installSkill
+          ref: src/cli/main.ts
+      verifiedRevision: 73de52d
+
+  - id: rel-node-uses-core-h7m4
+    type: depends-on
+    from: node-runtime-d3v7
+    to: core-library-n5w1
+
+  - id: rel-writer-uses-workspace-n1x8
+    type: depends-on
+    from: writer-module-s9w4
+    to: workspace-module-k8f1
+
+  - id: rel-writer-uses-history-b4r6
+    type: depends-on
+    from: writer-module-s9w4
+    to: history-module-a6p3
+
+  - id: rel-writer-uses-validator-j5e3
+    type: depends-on
+    from: writer-module-s9w4
+    to: validator-module-m2q8
+
+  - id: rel-watcher-calls-workspace-w2g9
+    type: calls
+    from: watcher-module-l2n8
+    to: workspace-module-k8f1
+    description: Calls reload() after a debounced change.
+
+  - id: rel-workspace-uses-repo-v8k2
+    type: depends-on
+    from: workspace-module-k8f1
+    to: repo-access-y5b2
+
+  - id: rel-repo-reads-model-r3y7
+    type: reads
+    from: repo-access-y5b2
+    to: model-files-c8d4
+
+  - id: rel-writer-writes-model-t9q1
+    type: writes
+    from: writer-module-s9w4
+    to: model-files-c8d4
+
+  - id: rel-history-writes-entries-m6c2
+    type: writes
+    from: history-module-a6p3
+    to: history-entries-p4u5
