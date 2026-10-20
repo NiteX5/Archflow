@@ -123,11 +123,14 @@ describe('Archflow UI', () => {
   it('styles an element in the current view with color, shape and icon', async () => {
     await open(repo);
     await page.locator('.react-flow__node', { hasText: 'Customer' }).click();
+    const customer = page.locator('.react-flow__node', { hasText: 'Customer' });
+    // Without a chosen icon, the icon comes from the element kind (actor).
+    expect(await customer.locator('svg.lucide-circle-user').count()).toBe(1);
     await page.getByLabel('Icon').selectOption('user');
     await expect.poll(() => modelFile('views/overview.yaml')).toContain('customer: { icon: user }');
+    await expect.poll(() => customer.locator('svg.lucide-user').count()).toBe(1);
     await page.getByLabel('Shape').selectOption('ellipse');
     await expect.poll(() => modelFile('views/overview.yaml')).toContain('customer: { icon: user, shape: ellipse }');
-    await expect.poll(() => page.locator('.react-flow__node', { hasText: 'Customer' }).locator('.node-icon').count()).toBe(1);
   });
 
   it('saves positions in the view file when a node is dragged', async () => {

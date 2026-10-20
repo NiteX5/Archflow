@@ -1,5 +1,6 @@
 import type { DerivedView } from '../../core/views.js';
 import type { Selection } from './Canvas.js';
+import { iconFor } from './icons.js';
 
 const COL = 200;
 const TOP = 70;
@@ -32,7 +33,11 @@ export function SequenceView({ derived, selection, onSelect }: { derived: Derive
               rx={6}
               className={selection?.type === 'element' && selection.id === p.id ? 'selected' : ''}
             />
-            <text x={cx(p.id)} y={35} textAnchor="middle">
+            {(() => {
+              const Icon = iconFor(p.element.kind, derived.view.styles?.[p.id]?.icon);
+              return <Icon x={cx(p.id) - 72} y={22} width={16} height={16} className="seq-icon" aria-hidden="true" />;
+            })()}
+            <text x={cx(p.id) + 8} y={35} textAnchor="middle">
               {p.element.name}
             </text>
             <line x1={cx(p.id)} y1={50} x2={cx(p.id)} y2={height - 10} className="seq-lifeline" />

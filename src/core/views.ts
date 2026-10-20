@@ -198,6 +198,11 @@ export function deriveView(model: Model, view: View, builtin = false, options: D
     if (parent !== undefined && ids.has(parent) && !flow) node.parentInView = parent;
     nodes.push(node);
   }
+  if (flow) {
+    // Participants appear in the order the flow declares them; extra included elements follow.
+    const order = new Map(flow.participants.map((p, i) => [p, i]));
+    nodes.sort((a, b) => (order.get(a.id) ?? Infinity) - (order.get(b.id) ?? Infinity));
+  }
 
   return { view, builtin, nodes, edges, ...(flow ? { flow } : {}), incomplete };
 }
