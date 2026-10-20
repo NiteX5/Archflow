@@ -92,21 +92,24 @@ export class Workspace {
       return this.state();
     }
     const result = validateModel(read.files);
-    this.issues = [...read.issues, ...result.issues];
-    if (result.model && !hasErrors(this.issues)) {
+    const issues = [...read.issues, ...result.issues];
+    if (result.model && !hasErrors(issues)) {
       const previous = this.snapshotValue;
-      this.snapshotValue = { files, model: result.model, version, at: new Date().toISOString() };
-      this.status = 'valid';
+      const next: Snapshot = { files, model: result.model, version, at: new Date().toISOString() };
+      // Record the change before publishing it, so whoever sees the new model also finds it in the history.
       if (previous && previous.version !== version) {
         try {
-          await this.onExternalChange?.(previous, this.snapshotValue);
+          await this.onExternalChange?.(previous, next);
         } catch {
           // History is best effort for external edits; the files themselves are already on disk (and in Git).
         }
       }
+      this.snapshotValue = next;
+      this.status = 'valid';
     } else {
       this.status = 'invalid';
     }
+    this.issues = issues;
     return this.notify();
   }
 
