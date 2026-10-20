@@ -161,3 +161,7 @@ pre.diff { background: var(--panel); padding: 8px; border-radius: 6px; font-size
 .diff-add { color: var(--ok); }
 .diff-del { color: var(--err); text-decoration: line-through; }
 .toast { white-space: pre-line; }
+.warning-list { background: color-mix(in srgb, var(--warn) 10%, var(--bg)); padding: 8px; border-radius: 6px; margin: 8px 0; }
+.warning-list ul, .import-preview ul, .findings { margin: 4px 0; padding-left: 18px; }
+.findings li { margin: 6px 0; }
+.dialog h3 { margin: 12px 0 4px; font-size: 14px; }

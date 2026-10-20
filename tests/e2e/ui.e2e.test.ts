@@ -170,4 +170,48 @@ describe('Archflow UI', () => {
     await page.getByRole('button', { name: 'Restore state before this change' }).click();
     await expect.poll(() => modelFile('systems.yaml')).toBe(original);
   });
+
+  it('exports the current view as SVG, PNG and PDF and the model as JSON', async () => {
+    await open(repo);
+    const grab = async (button: string) => {
+      await page.getByRole('button', { name: 'Export' }).click();
+      const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('dialog').getByRole('button', { name: button, exact: true }).click()]);
+      const file = await download.path();
+      return { name: download.suggestedFilename(), bytes: await readFile(file) };
+    };
+    const svg = await grab('SVG');
+    expect(svg.name).toBe('system-overview.svg');
+    expect(svg.bytes.toString()).toContain('Payment provider');
+    const png = await grab('PNG');
+    expect(png.name).toBe('system-overview.png');
+    expect(png.bytes.subarray(1, 4).toString()).toBe('PNG');
+    const pdf = await grab('PDF');
+    expect(pdf.bytes.subarray(0, 8).toString()).toBe('%PDF-1.4');
+    const json = await grab('Archflow JSON');
+    expect(JSON.parse(json.bytes.toString()).format).toBe('archflow-model');
+  });
+
+  it('imports a Mermaid diagram after reviewing a preview', async () => {
+    await open(repo);
+    const file = path.join(repo, 'search.mmd');
+    await writeFile(file, 'flowchart LR\n  web[Web storefront] --> search[Search service]\n');
+    await page.getByRole('button', { name: 'Import' }).click();
+    await page.getByLabel('File').setInputFiles(file);
+    await page.getByRole('button', { name: 'Preview' }).click();
+    await expect.poll(() => page.locator('.import-preview').textContent()).toContain('Linked to existing elements: 1');
+    expect(await page.locator('.warning-list').textContent()).toContain('pending-review');
+    await page.getByRole('button', { name: 'Apply import' }).click();
+    await expect.poll(() => page.locator('.sidebar').textContent()).toContain('search.mmd');
+    expect(await modelFile('imported/search.yaml')).toContain('name: Search service');
+  });
+
+  it('runs the verification and lists findings without changing the model', async () => {
+    await open(repo);
+    const before = await modelFile('systems.yaml');
+    await page.getByRole('button', { name: 'Verify' }).click();
+    await page.getByRole('button', { name: 'Run checks' }).click();
+    await expect.poll(() => page.locator('.findings').textContent()).toContain('does not exist in the repository');
+    expect(await modelFile('systems.yaml')).toBe(before);
+  });
 });
+
