@@ -202,7 +202,8 @@ describe('archflow serve', () => {
         onServerStarted: (s) => track(s),
       });
       expect(code).toBe(0);
-      expect(err.join('\n')).toMatch(new RegExp(`Port ${port} was busy; using port \\d+ instead`));
+      // Neighbouring ports may be taken by other processes too; all of them are reported.
+      expect(err.join('\n')).toMatch(new RegExp(`Port ${port}(, \\d+)* (was|were) busy; using port \\d+ instead`));
       const strict = await runCli(['serve', '--repo', SAMPLE_REPO, '--port', String(port), '--strict-port', '--no-open'], {
         out: () => {},
         err: (l) => err.push(l),
