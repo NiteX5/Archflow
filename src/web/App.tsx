@@ -6,7 +6,7 @@ import { layoutView } from '../core/layout.js';
 import { isDeleted, type Model } from '../core/model.js';
 import { entityHash, type Conflict, type Op, type OpsResult } from '../core/ops.js';
 import { ICONS, SHAPES, type Element, type Relation } from '../core/schema.js';
-import { ICON_GLYPHS } from './components/icons.js';
+import { iconFor } from './components/icons.js';
 import { BUILTIN_PREFIX, deriveView, listViews, searchElements, VIEW_TYPE_LABELS } from '../core/views.js';
 import { api, RequestError, subscribeState } from './api.js';
 import { Canvas, type LayoutEntry, type Selection } from './components/Canvas.js';
@@ -421,10 +421,11 @@ function SelectionActions(props: {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
+          <IconPreview kind={'kind' in entity ? entity.kind : undefined} icon={style.icon} />
           <select aria-label="Icon" value={style.icon ?? ''} onChange={(e) => setStyle({ icon: e.target.value || undefined })}>
-            <option value="">no icon</option>
+            <option value="">icon of the kind</option>
             {ICONS.map((i) => (
-              <option key={i} value={i}>{ICON_GLYPHS[i]} {i}</option>
+              <option key={i} value={i}>{i}</option>
             ))}
           </select>
           {(style.color || style.shape || style.icon) && <button onClick={() => setStyle({ color: undefined, shape: undefined, icon: undefined })}>Reset</button>}
@@ -432,6 +433,12 @@ function SelectionActions(props: {
       )}
     </div>
   );
+}
+
+function IconPreview({ kind, icon }: { kind?: Element['kind']; icon?: string }) {
+  if (!kind) return null;
+  const Icon = iconFor(kind, icon);
+  return <Icon size={18} aria-hidden="true" className="icon-preview" />;
 }
 
 function FreeViewForm({ model, onCancel, run, onCreated }: { model: Model; onCancel: () => void; run: (ops: Op[], done?: string) => Promise<boolean>; onCreated: (id: string) => void }) {

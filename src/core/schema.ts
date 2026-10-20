@@ -226,7 +226,36 @@ export type ViewType = (typeof VIEW_TYPES)[number];
 export const SHAPES = ['rectangle', 'rounded', 'ellipse', 'cylinder', 'hexagon', 'document'] as const;
 
 /** Icons available for elements in views (rendered by the UI). */
-export const ICONS = ['server', 'database', 'user', 'cloud', 'queue', 'lock', 'globe', 'mobile', 'gear', 'document', 'cache', 'mail'] as const;
+export const ICONS = [
+  'server',
+  'database',
+  'user',
+  'users',
+  'cloud',
+  'queue',
+  'lock',
+  'key',
+  'shield',
+  'globe',
+  'mobile',
+  'gear',
+  'document',
+  'cache',
+  'mail',
+  'api',
+  'webhook',
+  'network',
+  'container',
+  'storage',
+  'code',
+  'package',
+  'workflow',
+  'table',
+  'chart',
+  'cpu',
+  'layers',
+  'rocket',
+] as const;
 
 const layoutEntrySchema = z.strictObject({
   x: z.number().finite(),

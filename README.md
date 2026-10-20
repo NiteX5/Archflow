@@ -43,7 +43,7 @@ In the UI you can switch between views (architecture overview, dependencies,
 infrastructure & deployment, data, business flows, sequence of each flow, and
 your own free views), find elements, open their details, and create, edit,
 delete (logically) and restore elements, relations and notes; move, resize and
-style boxes; review the history and restore earlier states; export and import;
+style boxes (color, shape and icon; every element shows an icon for its kind); review the history and restore earlier states; export and import;
 and run the verification.
 
 Other commands:

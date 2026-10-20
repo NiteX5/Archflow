@@ -62,6 +62,8 @@ describe('deriveView', () => {
     const d = view(sample(), 'view-checkout');
     expect(ids(d)).toEqual(['customer', 'payment-provider', 'public-api', 'web-storefront']);
     expect(d.edges.map((e) => e.label)).toEqual(['1. Submits the cart', '2. POST /orders', '3. Charges the card']);
+    // Participants keep the order declared in the flow, not the order of the element files.
+    expect(d.nodes.map((n) => n.id)).toEqual(['customer', 'web-storefront', 'public-api', 'payment-provider']);
     expect(d.nodes.every((n) => n.parentInView === undefined)).toBe(true);
   });
 

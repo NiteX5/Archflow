@@ -187,8 +187,12 @@ view:
 ```
 
 Shapes: rectangle, rounded, ellipse, cylinder, hexagon, document.
-Icons: server, database, user, cloud, queue, lock, globe, mobile, gear, document, cache, mail.
-Icons are shown in the UI; exports (SVG, PDF, Mermaid, draw.io) do not include them.
+Icons: server, database, user, users, cloud, queue, lock, key, shield, globe,
+mobile, gear, document, cache, mail, api, webhook, network, container, storage,
+code, package, workflow, table, chart, cpu, layers, rocket.
+Without `icon`, the UI shows the icon of the element's kind. Icons come from
+Lucide (ISC license) and are shown in the UI; exports (SVG, PDF, Mermaid,
+draw.io) do not include them.
 
 ## Logical deletion
 

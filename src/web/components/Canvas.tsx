@@ -20,7 +20,7 @@ import type { Box } from '../../core/layout.js';
 import { categoryOf, type Element, type View } from '../../core/schema.js';
 import type { DerivedView } from '../../core/views.js';
 import { provenanceBadge } from './provenance.js';
-import { ICON_GLYPHS } from './icons.js';
+import { iconFor } from './icons.js';
 
 export type LayoutEntry = { x: number; y: number; width?: number; height?: number };
 
@@ -49,6 +49,7 @@ type ElementNodeData = {
 const ElementNode = memo(function ElementNode({ id, data, selected }: NodeProps<Node<ElementNodeData>>) {
   const { element, style, isGroup, editable, origin, onResized } = data;
   const badge = provenanceBadge(element.provenance);
+  const Icon = iconFor(element.kind, style?.icon);
   const classes = [
     'node',
     `cat-${categoryOf(element.kind)}`,
@@ -82,9 +83,9 @@ const ElementNode = memo(function ElementNode({ id, data, selected }: NodeProps<
           {badge.short}
         </span>
       </div>
-      <div className="node-name">
-        {style?.icon && <span className="node-icon" aria-label={style.icon}>{ICON_GLYPHS[style.icon]}</span>}
-        {element.name}
+      <div className="node-title">
+        <Icon className="node-icon" size={20} strokeWidth={1.75} aria-hidden="true" />
+        <span className="node-name">{element.name}</span>
       </div>
       {element.lifecycle && element.lifecycle !== 'active' && <div className="node-lifecycle">{element.lifecycle}</div>}
       <Handle type="source" position={Position.Right} isConnectable={editable} />
