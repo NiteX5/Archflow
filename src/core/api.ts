@@ -24,3 +24,22 @@ export interface ApiError {
   message: string;
   issues?: Issue[];
 }
+
+export type HistoryOrigin = 'ui' | 'external' | 'import' | 'restore';
+
+export interface FileChange {
+  file: string;
+  /** `null` when the file did not exist before / was removed. */
+  before: string | null;
+  after: string | null;
+}
+
+export interface HistoryEntry {
+  id: string;
+  at: string;
+  origin: HistoryOrigin;
+  summary: string;
+  changes: FileChange[];
+}
+
+export type HistorySummary = Omit<HistoryEntry, 'changes'> & { files: string[] };

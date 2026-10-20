@@ -146,3 +146,18 @@ input, select, textarea { background: var(--bg); border: 1px solid var(--border)
 .dialog .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--border); padding: 8px 14px; border-radius: 6px; z-index: 200; max-width: 80vw; }
 .toast.error { border-color: var(--err); color: var(--err); }
+.toolbar { display: flex; gap: 6px; flex-wrap: wrap; }
+button.block { display: block; width: 100%; margin-top: 8px; }
+.style-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.style-row input[type='color'] { width: 36px; height: 26px; padding: 0 2px; }
+fieldset { border: 1px solid var(--border); border-radius: 6px; margin: 8px 0; }
+.history { display: grid; grid-template-columns: 300px 1fr; gap: 12px; }
+.history-list { list-style: none; padding: 0; margin: 0; max-height: 65vh; overflow: auto; }
+.history-list li { padding: 6px; border-bottom: 1px solid var(--border); }
+.history-list li.active { background: var(--panel); }
+.history-list a { color: var(--text); display: block; }
+.history-detail { max-height: 65vh; overflow: auto; }
+pre.diff { background: var(--panel); padding: 8px; border-radius: 6px; font-size: 12px; overflow: auto; white-space: pre-wrap; }
+.diff-add { color: var(--ok); }
+.diff-del { color: var(--err); text-decoration: line-through; }
+.toast { white-space: pre-line; }

@@ -270,10 +270,11 @@ function applyOp(draft: Draft, op: Op): void {
       return;
     }
     case 'update': {
-      if (!draft.check(op.id, op.expected)) return;
+      const id = op.id.startsWith(BUILTIN_PREFIX) ? resolveView(draft, op.id) : op.id;
+      if (!draft.check(id, op.expected)) return;
       if ('id' in op.set) throw new WriteError('invalid-operation', 'IDs are stable and cannot be changed');
-      for (const [key, value] of Object.entries(op.set)) draft.set(op.id, key, value);
-      draft.summary.push(`updated "${op.id}"`);
+      for (const [key, value] of Object.entries(op.set)) draft.set(id, key, value);
+      draft.summary.push(`updated "${id}"`);
       return;
     }
     case 'delete': {

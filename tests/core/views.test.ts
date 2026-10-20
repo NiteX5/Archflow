@@ -141,7 +141,7 @@ describe('layoutView', () => {
     const m = sample();
     const boxes = layoutView(view(m, 'view-overview'));
     expect(boxes['customer']).toEqual({ x: 0, y: 0, width: NODE_WIDTH, height: NODE_HEIGHT });
-    expect(boxes['payment-provider']).toMatchObject({ x: 660, y: 0 });
+    expect(boxes['payment-provider']).toMatchObject({ x: 900, y: 0 });
   });
 
   it('places nodes left to right following relations', () => {

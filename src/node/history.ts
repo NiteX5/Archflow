@@ -7,26 +7,10 @@
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { MODEL_DIR } from '../core/schema.js';
+import type { FileChange, HistoryEntry, HistoryOrigin, HistorySummary } from '../core/api.js';
 import { resolveInside } from './repo.js';
 
-export type HistoryOrigin = 'ui' | 'external' | 'import' | 'restore';
-
-export interface FileChange {
-  file: string;
-  /** `null` when the file did not exist before / was removed. */
-  before: string | null;
-  after: string | null;
-}
-
-export interface HistoryEntry {
-  id: string;
-  at: string;
-  origin: HistoryOrigin;
-  summary: string;
-  changes: FileChange[];
-}
-
-export type HistorySummary = Omit<HistoryEntry, 'changes'> & { files: string[] };
+export type { FileChange, HistoryEntry, HistoryOrigin, HistorySummary };
 
 export const HISTORY_DIR = 'history';
 export const MAX_ENTRIES = 500;

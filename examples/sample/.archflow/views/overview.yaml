@@ -4,8 +4,8 @@ view:
   type: overview
   layout:
     customer: { x: 0, y: 0 }
-    web-storefront: { x: 220, y: 0 }
-    public-api: { x: 440, y: 0 }
-    payment-provider: { x: 660, y: 0 }
+    web-storefront: { x: 300, y: 0 }
+    public-api: { x: 600, y: 0 }
+    payment-provider: { x: 900, y: 0 }
   styles:
     payment-provider: { color: "#8250df", shape: rounded }

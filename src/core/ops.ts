@@ -34,7 +34,8 @@ export const opSchema = z.discriminatedUnion('op', [
   }),
   z.strictObject({
     op: z.literal('update'),
-    id: idSchema,
+    /** Entity ID, or a built-in view ID (then a view file is created first). */
+    id: z.string().min(1),
     /** Fields to set; `null` removes a field. `id` cannot be changed. */
     set: record,
     expected: z.string().optional(),

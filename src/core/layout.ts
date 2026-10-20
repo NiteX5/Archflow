@@ -14,7 +14,7 @@ export interface Box {
 
 export const NODE_WIDTH = 180;
 export const NODE_HEIGHT = 64;
-const GAP_X = 80;
+const GAP_X = 120;
 const GAP_Y = 40;
 const PAD = 24;
 const HEADER = 52;
