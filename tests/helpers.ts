@@ -10,7 +10,7 @@ const SAMPLE_MODEL_DIR = path.join(SAMPLE_REPO, '.archflow');
 export function sampleFiles(): ModelFile[] {
   return (readdirSync(SAMPLE_MODEL_DIR, { recursive: true, encoding: 'utf8' }) as string[])
     .filter((p) => p.endsWith('.yaml'))
-    .map((p) => ({ path: p.split(path.sep).join('/'), content: readFileSync(path.join(SAMPLE_MODEL_DIR, p), 'utf8') }));
+    .map((p) => ({ path: p.split(path.sep).join('/'), content: readFileSync(path.join(SAMPLE_MODEL_DIR, p), 'utf8').replace(/\r\n/g, '\n') }));
 }
 
 /** Returns the sample files with one file replaced (or added) and others removed. */

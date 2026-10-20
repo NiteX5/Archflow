@@ -23,6 +23,13 @@ describe('valid model', () => {
     expect(model!.sources['orders-table']?.file).toBe('data.yaml');
   });
 
+  it('accepts files with Windows line endings', () => {
+    const crlf = sampleFiles().map((f) => ({ ...f, content: f.content.replace(/\n/g, '\r\n') }));
+    const { model, issues } = validateModel(crlf);
+    expect(issues).toEqual([]);
+    expect(model!.elements).toHaveLength(11);
+  });
+
   it('keeps missing provenance absent instead of filling defaults', () => {
     const { model } = validateModel(sampleFiles());
     expect(model!.elements.find((e) => e.id === 'payment-provider')?.provenance).toBeUndefined();
