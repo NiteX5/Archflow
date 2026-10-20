@@ -208,7 +208,7 @@ export async function loadModel(root: string): Promise<ValidationResult> {
           severity: 'error',
           code: 'missing-manifest',
           message: `The repository has no ${MODEL_DIR}/ directory`,
-          hint: `Create ${MODEL_DIR}/manifest.yaml as described in docs/model-format.md.`,
+          hint: `Run "archflow init --repo <path>" or create ${MODEL_DIR}/manifest.yaml (see the Archflow model format reference).`,
         },
       ],
     };

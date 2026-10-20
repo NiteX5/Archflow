@@ -92,7 +92,10 @@ se produce modelo: quien llama conserva la última versión válida.
 | Unidad | Historias | Estado |
 |--------|-----------|--------|
 | U1 — Esquema, carga y validador + `archflow validate` | AM-003, AM-004 (validación), AM-005, AM-006 (modelo), AM-021 (rutas) | Hecho: 64 pruebas. Pendiente de fases siguientes: mostrar errores y última versión válida en la UI (AM-004/AM-011), diferenciación visual de procedencia (AM-006). |
-| U2 — Servicio local (`archflow serve`), puertos, selección de repositorio y vista general de solo lectura | AM-001, AM-002, AM-007, AM-010, AM-021 | Siguiente |
+| U2 — Servicio local (`archflow serve`), puertos, selección de repositorio, vistas derivadas y panel de detalle | AM-001, AM-002, AM-006 (UI), AM-007, AM-008, AM-010, AM-021 | Hecho |
+| U3 — Edición desde la UI persistida en los YAML canónicos, conflictos por entidad | AM-009, AM-014 | Hecho |
+| U4 — Vigilancia de archivos, última versión válida, historial y restauración | AM-004 (UI), AM-011, AM-013 | Hecho |
+| U5 — Skill de Claude Code, `init`, `skill install` y modelo propio de Archflow | AM-012, AM-015, AM-016 | Hecho (validación del comportamiento del agente: protocolo manual en `docs/claude-code-skill.md`) |
 
 ### Decisiones de U1
 

@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { initModel, InitError } from '../node/init.js';
+import { installSkill } from '../node/skill.js';
 import { formatIssue, hasErrors } from '../core/index.js';
 import { loadModel, RepoAccessError, resolveRepoRoot } from '../node/repo.js';
 import { DEFAULT_PORT, FALLBACK_RANGE, PortInUseError } from '../server/listen.js';
@@ -21,6 +22,8 @@ const USAGE = `Usage:
       Validate the model in <path>/.archflow.
   archflow init --repo <path> [--name <project name>]
       Create an empty model (manifest only). Never overwrites an existing model.
+  archflow skill install --repo <path> [--force]
+      Install the Claude Code skill into <path>/.claude/skills/archflow.
 
 Options:
   --repo <path>    Repository to open. Archflow only accesses this directory.
@@ -30,6 +33,7 @@ Options:
   --no-open        Do not open the browser.
   --json           Print the validation result as JSON.
   --name <name>    Project name for init (default: the directory name).
+  --force          Overwrite locally modified skill files.
   -h, --help       Show this help.`;
 
 /** Runs the CLI and returns the process exit code (`serve` resolves once listening). */
@@ -43,6 +47,7 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
       options: {
         repo: { type: 'string' },
         name: { type: 'string' },
+        force: { type: 'boolean', default: false },
         json: { type: 'boolean', default: false },
         port: { type: 'string' },
         'strict-port': { type: 'boolean', default: false },
@@ -70,6 +75,12 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
         return await serve(values, io);
       case 'init':
         return await init(values, io);
+      case 'skill':
+        if (positionals[1] !== 'install') {
+          io.err(`Unknown skill command "${positionals[1] ?? ''}"\n\n${USAGE}`);
+          return 2;
+        }
+        return await skillInstall(values, io);
       default:
         io.err(`Unknown command "${command}"\n\n${USAGE}`);
         return 2;
@@ -83,7 +94,7 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
   }
 }
 
-type Values = { repo?: string; name?: string; json?: boolean; port?: string; 'strict-port'?: boolean; open?: boolean };
+type Values = { repo?: string; name?: string; force?: boolean; json?: boolean; port?: string; 'strict-port'?: boolean; open?: boolean };
 
 async function validate(values: Values, io: CliIo): Promise<number> {
   if (!values.repo) {
@@ -133,6 +144,19 @@ async function init(values: Values, io: CliIo): Promise<number> {
     }
     throw err;
   }
+}
+
+async function skillInstall(values: Values, io: CliIo): Promise<number> {
+  if (!values.repo) {
+    io.err(`"skill install" requires --repo <path>\n\n${USAGE}`);
+    return 2;
+  }
+  const root = await resolveRepoRoot(values.repo);
+  const result = await installSkill(root, values.force ?? false);
+  for (const f of result.written) io.out(`Wrote ${f}`);
+  for (const f of result.unchanged) io.out(`Up to date: ${f}`);
+  for (const f of result.skipped) io.err(`Skipped ${f}: it has local changes. Use --force to overwrite it.`);
+  return result.skipped.length > 0 ? 1 : 0;
 }
 
 async function serve(values: Values, io: CliIo): Promise<number> {

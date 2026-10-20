@@ -217,7 +217,7 @@ function checkSchemaVersion(parsed: ParsedFile): Issue | undefined {
     hint:
       version > SCHEMA_VERSION
         ? 'Upgrade Archflow to open this model. The files were not modified.'
-        : `Set "schemaVersion: ${SCHEMA_VERSION}" after reviewing docs/model-format.md.`,
+        : `Set "schemaVersion: ${SCHEMA_VERSION}" after reviewing the Archflow model format reference.`,
   };
 }
 
@@ -255,7 +255,7 @@ function convertZodIssues(error: z.ZodError, file: ParsedFile): Issue[] {
           code: 'schema',
           ...loc(file, [...path, key]),
           message: `Unknown field "${key}"`,
-          hint: 'Check the spelling against docs/model-format.md. Free-form data belongs in "metadata" (elements and relations).',
+          hint: 'Check the spelling against the Archflow model format reference. Free-form data belongs in "metadata" (elements and relations).',
         });
       }
       continue;
