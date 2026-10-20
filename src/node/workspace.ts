@@ -31,6 +31,10 @@ export class Workspace {
   private status: WorkspaceStatus = 'no-repo';
   private readonly listeners = new Set<Listener>();
   private queue: Promise<unknown> = Promise.resolve();
+  /** Called when files changed outside Archflow and the new set is valid (used to record history). */
+  onExternalChange?: (previous: Snapshot, next: Snapshot) => Promise<void>;
+  /** Called once a repository is authorized (used to start watching it). */
+  onOpen?: (root: string) => void;
 
   constructor(readonly repoFixed: boolean) {}
 
@@ -61,7 +65,9 @@ export class Workspace {
         );
       }
       this.rootPath = await resolveRepoRoot(path);
-      return this.reloadUnlocked();
+      const state = await this.reloadUnlocked();
+      this.onOpen?.(this.rootPath);
+      return state;
     });
   }
 
@@ -88,8 +94,16 @@ export class Workspace {
     const result = validateModel(read.files);
     this.issues = [...read.issues, ...result.issues];
     if (result.model && !hasErrors(this.issues)) {
+      const previous = this.snapshotValue;
       this.snapshotValue = { files, model: result.model, version, at: new Date().toISOString() };
       this.status = 'valid';
+      if (previous && previous.version !== version) {
+        try {
+          await this.onExternalChange?.(previous, this.snapshotValue);
+        } catch {
+          // History is best effort for external edits; the files themselves are already on disk (and in Git).
+        }
+      }
     } else {
       this.status = 'invalid';
     }
