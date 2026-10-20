@@ -2,6 +2,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { initModel, InitError } from '../node/init.js';
 import { installSkill } from '../node/skill.js';
+import { verifyModel } from '../node/verify.js';
 import { formatIssue, hasErrors } from '../core/index.js';
 import { loadModel, RepoAccessError, resolveRepoRoot } from '../node/repo.js';
 import { DEFAULT_PORT, FALLBACK_RANGE, PortInUseError } from '../server/listen.js';
@@ -22,6 +23,8 @@ const USAGE = `Usage:
       Validate the model in <path>/.archflow.
   archflow init --repo <path> [--name <project name>]
       Create an empty model (manifest only). Never overwrites an existing model.
+  archflow verify --repo <path> [--json]
+      Compare the model with the repository and report discrepancies (never changes the model).
   archflow skill install --repo <path> [--force]
       Install the Claude Code skill into <path>/.claude/skills/archflow.
 
@@ -75,6 +78,8 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
         return await serve(values, io);
       case 'init':
         return await init(values, io);
+      case 'verify':
+        return await verify(values, io);
       case 'skill':
         if (positionals[1] !== 'install') {
           io.err(`Unknown skill command "${positionals[1] ?? ''}"\n\n${USAGE}`);
@@ -144,6 +149,37 @@ async function init(values: Values, io: CliIo): Promise<number> {
     }
     throw err;
   }
+}
+
+async function verify(values: Values, io: CliIo): Promise<number> {
+  if (!values.repo) {
+    io.err(`"verify" requires --repo <path>\n\n${USAGE}`);
+    return 2;
+  }
+  const root = await resolveRepoRoot(values.repo);
+  const loaded = await loadModel(root);
+  if (!loaded.model) {
+    for (const issue of loaded.issues) io.err(formatIssue(issue));
+    io.err('The model is invalid; fix it before verifying it against the code.');
+    return 1;
+  }
+  const report = await verifyModel(root, loaded.model);
+  if (values.json) {
+    io.out(JSON.stringify(report, null, 2));
+    return report.findings.length ? 1 : 0;
+  }
+  for (const a of report.adapters) io.out(`[${a.adapter}] ${a.note}`);
+  if (report.truncated) io.out(`Only the first ${report.scannedFiles} files were scanned.`);
+  for (const f of report.findings) {
+    const where = f.evidence.map((e) => (e.line ? `${e.file}:${e.line}` : e.file)).join(', ');
+    io.out(`${f.status.toUpperCase()} [${f.adapter}/${f.code}] ${f.message}${where ? ` (${where})` : ''}`);
+  }
+  io.out(
+    report.findings.length
+      ? `${report.findings.length} discrepancy(ies). "inferred" results need review; the model was not modified.`
+      : 'No discrepancies found by the available checks.',
+  );
+  return report.findings.length ? 1 : 0;
 }
 
 async function skillInstall(values: Values, io: CliIo): Promise<number> {
