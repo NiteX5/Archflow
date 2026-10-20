@@ -147,6 +147,7 @@ flow:
       action: Submits the cart
       condition: ...
       result: ...
+  metadata: { ... }         # optional, free-form
 ```
 
 ## Decisions (`decisions.yaml`)
@@ -182,6 +183,7 @@ view:
     public-api: { x: 440, y: 0, width: 160, height: 60 }
   styles:
     public-api: { color: "#1f6feb", shape: rounded, icon: server }
+  metadata: { ... }   # optional, e.g. source information kept by an import
 ```
 
 Shapes: rectangle, rounded, ellipse, cylinder, hexagon, document.

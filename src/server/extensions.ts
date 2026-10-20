@@ -6,6 +6,7 @@ import { watchModel, type ModelWatcher } from '../node/watch.js';
 import type { Workspace } from '../node/workspace.js';
 import { applyOps, commitFiles, freshValidSnapshot, WriteError } from '../node/writer.js';
 import { HttpError, type Route } from './http.js';
+import { interopRoutes } from './interop.js';
 
 const STATUS: Record<WriteError['code'], number> = {
   conflict: 409,
@@ -130,6 +131,8 @@ export function serverExtensions(workspace: Workspace): { routes: Route[]; start
         ),
     },
   ];
+
+  routes.push(...interopRoutes(workspace, historyOf));
 
   return {
     routes,

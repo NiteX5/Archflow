@@ -195,6 +195,7 @@ export const flowSchema = z.strictObject({
   steps: z.array(flowStepSchema).optional(),
   notes: z.array(noteSchema).optional(),
   provenance: provenanceSchema.optional(),
+  metadata: metadataSchema.optional(),
   ...lifecycleFields,
 });
 
@@ -253,6 +254,8 @@ export const viewSchema = z.strictObject({
   exclude: z.array(idSchema).optional(),
   layout: z.record(idSchema, layoutEntrySchema).optional(),
   styles: z.record(idSchema, styleEntrySchema).optional(),
+  /** Free-form, e.g. what could not be converted when the view was imported. */
+  metadata: metadataSchema.optional(),
 });
 
 export const viewFileSchema = z.strictObject({ view: viewSchema });
