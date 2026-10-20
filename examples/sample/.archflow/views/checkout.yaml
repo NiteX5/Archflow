@@ -1,0 +1,5 @@
+view:
+  id: view-checkout
+  name: Checkout sequence
+  type: sequence
+  flow: flow-checkout

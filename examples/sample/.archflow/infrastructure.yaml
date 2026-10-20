@@ -1,0 +1,15 @@
+elements:
+  - id: env-production
+    kind: environment
+    name: Production
+
+  - id: api-container
+    kind: container
+    name: API container
+    parent: env-production
+
+relations:
+  - id: rel-api-deploys
+    type: deploys-to
+    from: public-api
+    to: api-container

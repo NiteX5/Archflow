@@ -1,0 +1,4 @@
+view:
+  id: view-dependencies
+  name: API dependencies
+  type: dependencies

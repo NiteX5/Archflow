@@ -1,0 +1,61 @@
+elements:
+  - id: customer
+    kind: actor
+    name: Customer
+    description: Person buying books.
+
+  - id: web-storefront
+    kind: web-app
+    name: Web storefront
+    responsibility: Catalog browsing and checkout UI.
+    code:
+      - path: apps/web
+    provenance:
+      source: manual
+      status: verified
+      verifiedAt: 2026-01-15
+
+  - id: public-api
+    kind: api
+    name: Public API
+    responsibility: Exposes catalog and order operations over HTTPS.
+    code:
+      - path: apps/api/src
+    provenance:
+      source: agent
+      status: pending-review
+      evidence:
+        - description: Express app bootstrapped in apps/api/src/server.ts
+          ref: apps/api/src/server.ts
+
+  - id: payment-provider
+    kind: external-system
+    name: Payment provider
+    description: Third-party card processor.
+    # Provenance intentionally missing: it is shown as unknown.
+
+relations:
+  - id: rel-customer-uses-web
+    type: depends-on
+    from: customer
+    to: web-storefront
+
+  - id: rel-web-calls-api
+    type: calls
+    from: web-storefront
+    to: public-api
+    description: REST over HTTPS.
+    provenance:
+      source: manual
+      status: verified
+      evidence:
+        - description: API client in apps/web/src/api.ts
+          ref: apps/web/src/api.ts
+
+  - id: rel-api-pays
+    type: integrates-with
+    from: public-api
+    to: payment-provider
+    provenance:
+      source: tool-inferred
+      status: inferred

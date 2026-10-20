@@ -1,0 +1,20 @@
+flow:
+  id: flow-checkout
+  kind: business
+  name: Checkout
+  participants: [customer, web-storefront, public-api, payment-provider]
+  steps:
+    - id: submit
+      from: customer
+      to: web-storefront
+      action: Submits the cart
+    - id: create-order
+      from: web-storefront
+      to: public-api
+      action: POST /orders
+    - id: charge
+      from: public-api
+      to: payment-provider
+      action: Charges the card
+      condition: Order total > 0
+      result: Payment confirmed or rejected
