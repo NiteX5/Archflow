@@ -138,8 +138,12 @@ npm run build         # server (tsc) + UI (Vite) into dist/
 npm run test:e2e      # browser tests against the build (Chromium; set ARCHFLOW_CHROMIUM if needed)
 npm run package       # release/archflow-<version>.tgz
 npm run smoke:package # install the tarball offline and exercise it
-npm run dev:web       # Vite dev server for the UI; run `archflow serve` (port 4870) alongside
+npm run dev -- --repo <path>   # service + Vite dev server with hot reload (UI at http://127.0.0.1:5173)
 ```
+
+`npm run dev` starts the service on port 4870 (`ARCHFLOW_PORT` changes it) and
+Vite on 5173, which forwards `/api/` to the service. To just use Archflow from
+a clone, run `npm run build` and then `npm start -- --repo <path>`.
 
 Architecture and decisions: [`docs/technical-plan.md`](docs/technical-plan.md)
 and the model in `.archflow/`. Functional specification:
