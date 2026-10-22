@@ -52,7 +52,7 @@ interface ViewRule {
   describe: string;
 }
 
-const RULES: Record<Exclude<ViewType, 'sequence' | 'free'>, ViewRule> = {
+const RULES: Record<Exclude<ViewType, 'sequence' | 'free' | 'map'>, ViewRule> = {
   overview: {
     categories: ['system', 'business'],
     describe: 'systems, applications, APIs, services, external systems or actors',
@@ -82,6 +82,7 @@ const RULES: Record<Exclude<ViewType, 'sequence' | 'free'>, ViewRule> = {
 };
 
 export const VIEW_TYPE_LABELS: Record<ViewType, string> = {
+  map: 'Architecture map',
   overview: 'Architecture overview',
   dependencies: 'Dependencies',
   sequence: 'Execution & sequence',
@@ -98,8 +99,9 @@ export const BUILTIN_PREFIX = 'builtin:';
  * has no declared view yet (and one sequence view per flow without one).
  */
 export function listViews(model: Model): { view: View; builtin: boolean }[] {
-  const order: Record<ViewType, number> = { overview: 0, dependencies: 1, deployment: 2, data: 3, business: 4, sequence: 5, free: 6 };
-  const out = [...model.views].sort((a, b) => order[a.type] - order[b.type]).map((view) => ({ view, builtin: false }));
+  const order: Record<ViewType, number> = { map: -1, overview: 0, dependencies: 1, deployment: 2, data: 3, business: 4, sequence: 5, free: 6 };
+  // The map's adjustment file is not a view of its own.
+  const out = [...model.views].filter((v) => v.type !== 'map').sort((a, b) => order[a.type] - order[b.type]).map((view) => ({ view, builtin: false }));
   const declaredTypes = new Set(model.views.map((v) => v.type));
   for (const type of ['overview', 'dependencies', 'deployment', 'data', 'business'] as const) {
     if (!declaredTypes.has(type)) {
@@ -152,7 +154,7 @@ export function deriveView(model: Model, view: View, builtin = false, options: D
         });
       });
     }
-  } else if (view.type !== 'free') {
+  } else if (view.type !== 'free' && view.type !== 'map') {
     const rule = RULES[view.type];
     for (const e of model.elements) if (visible(e) && rule.categories.includes(categoryOf(e.kind))) ids.add(e.id);
     if (rule.pullInVia) {
@@ -171,7 +173,7 @@ export function deriveView(model: Model, view: View, builtin = false, options: D
   if (view.type === 'free' && ids.size === 0) incomplete.push('This free view has no elements yet. Add elements to "include".');
 
   if (!flow) {
-    const allowed = view.type === 'free' || view.type === 'overview' ? undefined : RULES[view.type as keyof typeof RULES]?.relationTypes;
+    const allowed = view.type === 'free' || view.type === 'map' || view.type === 'overview' ? undefined : RULES[view.type as keyof typeof RULES]?.relationTypes;
     for (const r of model.relations) {
       if (!visibleRel(r) || !ids.has(r.from) || !ids.has(r.to)) continue;
       if (allowed && !allowed.includes(r.type)) continue;
