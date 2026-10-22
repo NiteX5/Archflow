@@ -4,6 +4,7 @@ import { isDeleted, type EntitySource, type EntityType, type Model } from './mod
 import { parseModelFile, type ModelFile, type ParsedFile } from './parse.js';
 import {
   SCHEMA_VERSION,
+  categoryOf,
   decisionsFileSchema,
   elementsFileSchema,
   flowFileSchema,
@@ -201,10 +202,23 @@ export function validateModel(files: readonly ModelFile[]): ValidationResult {
   return hasErrors(issues) ? { issues } : { model, issues };
 }
 
+/** Versions that migrate.ts can upgrade to {@link SCHEMA_VERSION}. */
+export const MIGRATABLE_VERSIONS: readonly number[] = [1];
+
 function checkSchemaVersion(parsed: ParsedFile): Issue | undefined {
   const data = parsed.data as { schemaVersion?: unknown };
   const version = typeof data === 'object' ? data.schemaVersion : undefined;
   if (typeof version !== 'number' || version === SCHEMA_VERSION) return undefined;
+  if (version < SCHEMA_VERSION && MIGRATABLE_VERSIONS.includes(version)) {
+    return {
+      severity: 'error',
+      code: 'migration-required',
+      ...loc(parsed, ['schemaVersion']),
+      path: 'schemaVersion',
+      message: `The model uses schema version ${version}; this Archflow uses version ${SCHEMA_VERSION}`,
+      hint: 'Run "archflow migrate --repo <path>" or use "Migrate" in the UI. The previous files are kept in the history.',
+    };
+  }
   return {
     severity: 'error',
     code: 'unsupported-schema-version',
@@ -436,6 +450,24 @@ function checkElements(model: Model, ctx: RefContext) {
 function checkRelations(model: Model, ctx: RefContext) {
   const seen = new Map<string, Relation>();
   for (const rel of model.relations) {
+    rel.via?.forEach((id, i) => {
+      const target = ctx.ref(id, ['element'], ctx.at(rel.id, ['via', i]), `Relation "${rel.id}" via`);
+      if (target && categoryOf((target.entity as Element).kind) !== 'functional') {
+        ctx.error({
+          code: 'relation-config',
+          ...ctx.at(rel.id, ['via', i]),
+          message: `"via" lists functional dependencies (guard, dto, enum...), but "${id}" is a ${(target.entity as Element).kind}`,
+          hint: 'Declare the relation to that element directly instead.',
+        });
+      }
+    });
+    if (rel.cardinality !== undefined && rel.type !== 'references') {
+      ctx.error({
+        code: 'relation-config',
+        ...ctx.at(rel.id, ['cardinality']),
+        message: '"cardinality" only applies to "references" relations',
+      });
+    }
     for (const end of ['from', 'to'] as const) {
       const target = ctx.ref(rel[end], ['element'], ctx.at(rel.id, [end]), `Relation "${rel.id}" "${end}"`);
       if (target && isDeleted(target.entity as Element) && !isDeleted(rel)) {
@@ -479,6 +511,21 @@ function checkFlows(model: Model, ctx: RefContext) {
         });
       }
       stepIds.add(step.id);
+      if (step.branches && step.type !== 'decision') {
+        ctx.error({
+          code: 'flow-config',
+          ...ctx.at(flow.id, ['steps', i, 'branches']),
+          message: `Step "${step.id}" has "branches" but is not a decision`,
+          hint: 'Set "type: decision" or use "next" for a single follow-up step.',
+        });
+      }
+      if (step.type === 'decision' && !step.branches?.length) {
+        ctx.warn({
+          code: 'flow-config',
+          ...ctx.at(flow.id, ['steps', i]),
+          message: `Decision "${step.id}" declares no branches, so its outcomes are unknown`,
+        });
+      }
       for (const end of ['from', 'to'] as const) {
         const target = step[end];
         if (target !== undefined && !participants.has(target)) {
@@ -491,6 +538,45 @@ function checkFlows(model: Model, ctx: RefContext) {
         }
       }
     });
+    checkStepLinks(flow, ctx);
+  }
+}
+
+/** `next`/`branches` must name steps of the same flow, and `next` chains may not loop without a decision. */
+function checkStepLinks(flow: Flow, ctx: RefContext) {
+  const steps = flow.steps ?? [];
+  const ids = new Set(steps.map((s) => s.id));
+  steps.forEach((step, i) => {
+    const targets: [string, (string | number)[]][] = [];
+    if (step.next !== undefined) targets.push([step.next, ['steps', i, 'next']]);
+    step.branches?.forEach((b, j) => targets.push([b.next, ['steps', i, 'branches', j, 'next']]));
+    for (const [target, path] of targets) {
+      if (!ids.has(target)) {
+        ctx.error({
+          code: 'broken-reference',
+          ...ctx.at(flow.id, path),
+          message: `Step "${step.id}" continues with "${target}", which is not a step of flow "${flow.id}"`,
+        });
+      }
+    }
+  });
+  const byId = new Map(steps.map((s) => [s.id, s]));
+  for (const start of steps) {
+    const seen = new Set<string>();
+    let cur: (typeof steps)[number] | undefined = start;
+    while (cur?.next !== undefined && cur.type !== 'decision') {
+      if (seen.has(cur.id)) {
+        ctx.error({
+          code: 'flow-config',
+          ...ctx.at(flow.id, ['steps', steps.indexOf(start), 'next']),
+          message: `Steps of flow "${flow.id}" loop through "next" (${[...seen].join(' → ')}) without a decision to leave the loop`,
+          hint: 'Add a decision step with a branch that exits the loop.',
+        });
+        return;
+      }
+      seen.add(cur.id);
+      cur = byId.get(cur.next);
+    }
   }
 }
 

@@ -10,7 +10,7 @@ describe('valid model', () => {
     const { model, issues } = validateModel(sampleFiles());
     expect(issues).toEqual([]);
     expect(model).toBeDefined();
-    expect(model!.schemaVersion).toBe(1);
+    expect(model!.schemaVersion).toBe(2);
     expect(model!.elements.map((e) => e.id)).toContain('orders-module');
     expect(model!.sources['orders-module']).toEqual({ type: 'element', file: 'components/api.yaml', path: ['elements', 0] });
     expect(model!.sources['flow-checkout']?.file).toBe('flows/checkout.yaml');
@@ -71,7 +71,7 @@ describe('manifest and schema version', () => {
   });
 
   it('rejects newer schema versions without touching anything else', () => {
-    const { model, issues } = validateModel(withFiles({ 'manifest.yaml': 'schemaVersion: 2\nproject: { name: X }\n' }));
+    const { model, issues } = validateModel(withFiles({ 'manifest.yaml': 'schemaVersion: 3\nproject: { name: X }\n' }));
     expect(model).toBeUndefined();
     expect(issues).toMatchObject([{ code: 'unsupported-schema-version', file: 'manifest.yaml', line: 1 }]);
     expect(issues[0]!.hint).toMatch(/Upgrade Archflow/);

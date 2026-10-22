@@ -7,6 +7,7 @@ const COLORS: Record<string, string> = {
   infrastructure: '#8250df',
   system: '#0969da',
   internal: '#1a7f37',
+  functional: '#bf3989',
   behavior: '#9a6700',
   data: '#bc4c00',
   business: '#cf222e',

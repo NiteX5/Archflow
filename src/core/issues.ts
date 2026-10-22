@@ -16,6 +16,9 @@ export type IssueCode =
   | 'possible-duplicate'
   | 'missing-evidence'
   | 'view-config'
+  | 'migration-required'
+  | 'relation-config'
+  | 'flow-config'
   | 'limit-exceeded'
   | 'unreadable-file';
 
