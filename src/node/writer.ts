@@ -49,6 +49,7 @@ const DEFAULT_FILES: Record<ElementCategory, string> = {
   infrastructure: 'infrastructure.yaml',
   system: 'systems.yaml',
   internal: 'components.yaml',
+  functional: 'components.yaml',
   behavior: 'components.yaml',
   data: 'data.yaml',
   business: 'business.yaml',
@@ -395,6 +396,33 @@ async function atomicWrite(full: string, content: string): Promise<void> {
 }
 
 /**
+ * Writes the difference between two complete file sets atomically per file and
+ * records it in the history. Callers validate `next` before calling this.
+ */
+export async function writeFileSet(
+  root: string,
+  history: History,
+  before: Map<string, string>,
+  next: Map<string, string>,
+  origin: HistoryOrigin,
+  summary: string,
+): Promise<FileChange[]> {
+  const changes: FileChange[] = [];
+  for (const file of new Set([...before.keys(), ...next.keys()])) {
+    const b = before.get(file) ?? null;
+    const a = next.get(file) ?? null;
+    if (b !== a) changes.push({ file, before: b, after: a });
+  }
+  for (const c of changes) {
+    const full = resolveInside(root, `${MODEL_DIR}/${checkModelPath(c.file)}`);
+    if (c.after === null) await rm(full, { force: true });
+    else await atomicWrite(full, c.after);
+  }
+  await history.record(origin, summary, changes);
+  return changes;
+}
+
+/**
  * Validates and writes a complete new file set. Must run inside `workspace.exclusive`
  * after the workspace was reloaded from disk.
  */
@@ -412,19 +440,8 @@ export async function commitFiles(
   if (!result.model || hasErrors(result.issues)) {
     throw new WriteError('invalid-result', 'The change would make the model invalid; nothing was written.', [], result.issues);
   }
-  const changes: FileChange[] = [];
-  for (const file of new Set([...snapshot.files.keys(), ...next.keys()])) {
-    const before = snapshot.files.get(file) ?? null;
-    const after = next.get(file) ?? null;
-    if (before !== after) changes.push({ file, before, after });
-  }
+  const changes = await writeFileSet(root, history, snapshot.files, next, origin, summary);
   if (changes.length === 0) return;
-  for (const c of changes) {
-    const full = resolveInside(root, `${MODEL_DIR}/${checkModelPath(c.file)}`);
-    if (c.after === null) await rm(full, { force: true });
-    else await atomicWrite(full, c.after);
-  }
-  await history.record(origin, summary, changes);
   workspace.commitSnapshot({ files: next, model: result.model, version: versionOf(next), at: new Date().toISOString() }, result.issues);
 }
 

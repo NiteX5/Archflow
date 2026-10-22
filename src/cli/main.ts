@@ -3,6 +3,8 @@ import { parseArgs } from 'node:util';
 import { initModel, InitError } from '../node/init.js';
 import { installSkill } from '../node/skill.js';
 import { verifyModel } from '../node/verify.js';
+import { History } from '../node/history.js';
+import { MigrationFailed, migrateRepository } from '../node/migrate.js';
 import { formatIssue, hasErrors } from '../core/index.js';
 import { loadModel, RepoAccessError, resolveRepoRoot } from '../node/repo.js';
 import { DEFAULT_PORT, FALLBACK_RANGE, PortInUseError } from '../server/listen.js';
@@ -25,6 +27,8 @@ const USAGE = `Usage:
       Create an empty model (manifest only). Never overwrites an existing model.
   archflow verify --repo <path> [--json]
       Compare the model with the repository and report discrepancies (never changes the model).
+  archflow migrate --repo <path>
+      Upgrade the model to the current schema version (previous files are kept in the history).
   archflow skill install --repo <path> [--force]
       Install the Claude Code skill into <path>/.claude/skills/archflow.
 
@@ -78,6 +82,8 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
         return await serve(values, io);
       case 'init':
         return await init(values, io);
+      case 'migrate':
+        return await migrate(values, io);
       case 'verify':
         return await verify(values, io);
       case 'skill':
@@ -145,6 +151,28 @@ async function init(values: Values, io: CliIo): Promise<number> {
   } catch (err) {
     if (err instanceof InitError) {
       io.err(err.message);
+      return 1;
+    }
+    throw err;
+  }
+}
+
+async function migrate(values: Values, io: CliIo): Promise<number> {
+  if (!values.repo) {
+    io.err(`"migrate" requires --repo <path>\n\n${USAGE}`);
+    return 2;
+  }
+  const root = await resolveRepoRoot(values.repo);
+  try {
+    const r = await migrateRepository(root, new History(root));
+    if (r.changedFiles.length === 0) io.out(`The model already uses schema version ${r.to}.`);
+    else io.out(`Migrated schema ${r.from} → ${r.to}: ${r.changedFiles.join(', ')}. The previous files are in .archflow/history.`);
+    for (const n of r.notes) io.out(n);
+    return 0;
+  } catch (err) {
+    if (err instanceof MigrationFailed) {
+      io.err(err.message);
+      for (const issue of err.issues) io.err(formatIssue(issue));
       return 1;
     }
     throw err;

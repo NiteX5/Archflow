@@ -29,11 +29,11 @@ describe('export', () => {
     const json = await call(s, 'GET', '/api/export/model?format=json');
     expect(json.status).toBe(200);
     expect(json.headers['content-disposition']).toMatch(/attachment; filename="bookstore-example-.archflow.json"/);
-    expect(json.body).toMatchObject({ format: 'archflow-model', schemaVersion: 1 });
+    expect(json.body).toMatchObject({ format: 'archflow-model', schemaVersion: 2 });
     expect(json.body.elements).toHaveLength(11);
     expect(json.body.elements.find((e: { id: string }) => e.id === 'public-api').provenance.evidence).toHaveLength(1);
     const yaml = await call(s, 'GET', '/api/export/model?format=yaml');
-    expect(yaml.text).toMatch(/^format: archflow-model\nschemaVersion: 1\n/);
+    expect(yaml.text).toMatch(/^format: archflow-model\nschemaVersion: 2\n/);
     expect((await call(s, 'GET', '/api/export/model?format=xml')).status).toBe(400);
   });
 
@@ -155,7 +155,7 @@ describe('verification', () => {
       await mkdir(path.dirname(path.join(dir, rel)), { recursive: true });
       await writeFile(path.join(dir, rel), content);
     };
-    await w('.archflow/manifest.yaml', 'schemaVersion: 1\nproject: { name: V }\n');
+    await w('.archflow/manifest.yaml', 'schemaVersion: 2\nproject: { name: V }\n');
     await w(
       '.archflow/systems.yaml',
       `elements:
