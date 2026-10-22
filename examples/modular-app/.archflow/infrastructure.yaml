@@ -1,0 +1,8 @@
+elements:
+  - { id: aws-cloud, kind: cloud-provider, name: AWS, summary: Cloud provider hosting the platform. }
+  - { id: ecs-cluster, kind: container, name: ECS cluster, parent: aws-cloud, summary: Runs the API containers. }
+  - { id: vercel, kind: cloud-provider, name: Vercel, summary: Hosts the web frontend. }
+  - { id: rds-postgres, kind: database, name: PostgreSQL (RDS), parent: aws-cloud, summary: Main relational database. }
+relations:
+  - { id: rel-api-deploy, type: deploys-to, from: clinic-api, to: ecs-cluster }
+  - { id: rel-web-deploy, type: deploys-to, from: clinic-web, to: vercel }

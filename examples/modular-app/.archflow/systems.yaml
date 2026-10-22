@@ -1,0 +1,38 @@
+elements:
+  - { id: patient, kind: actor, name: Patient, summary: Person who books appointments. }
+  - { id: receptionist, kind: actor, name: Receptionist, summary: Staff member who manages the agenda. }
+  - id: clinic-platform
+    kind: system
+    name: Clinic platform
+    summary: Online appointment booking for a medical clinic.
+  - id: clinic-web
+    kind: web-app
+    name: Clinic web (Next.js)
+    parent: clinic-platform
+    summary: Website where patients and staff work.
+    code: [{ path: apps/web }]
+  - id: clinic-api
+    kind: api
+    name: Clinic API (NestJS)
+    parent: clinic-platform
+    summary: REST API organised in feature modules.
+    responsibility: Business rules, persistence and integrations.
+    code: [{ path: apps/api/src }]
+    provenance: { source: manual, status: verified, verifiedAt: 2026-10-01 }
+  - { id: stripe, kind: external-system, name: Stripe, summary: Card payments. }
+  - { id: sendgrid, kind: external-system, name: SendGrid, summary: Transactional e-mail. }
+relations:
+  - { id: rel-patient-web, type: depends-on, from: patient, to: clinic-web }
+  - { id: rel-recep-web, type: depends-on, from: receptionist, to: clinic-web }
+  - id: rel-web-api-appointments
+    type: calls
+    from: clinic-web
+    to: appointments-controller
+    description: REST calls to /appointments.
+    via: [jwt-guard, roles-guard, book-appointment-dto]
+  - id: rel-web-api-auth
+    type: calls
+    from: clinic-web
+    to: auth-controller
+    description: Login and token refresh.
+    via: [login-dto]
