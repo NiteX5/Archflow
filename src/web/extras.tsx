@@ -7,6 +7,7 @@ import { BUILTIN_PREFIX } from '../core/views.js';
 import { api, RequestError } from './api.js';
 import type { Selection } from './components/Canvas.js';
 import { Dialog } from './components/Dialog.js';
+import { useI18n } from './i18n.js';
 
 export type ExtrasDialog = 'view-settings' | 'export' | 'import' | 'verify';
 
@@ -404,13 +405,16 @@ function VerifyDialog({ onClose, select }: DialogsProps) {
 }
 
 export const Extras = {
-  Buttons: ({ state, editable, open }: { state: AppState; editable: boolean; open: (which: ExtrasDialog) => void }) => (
+  Buttons: function Buttons({ state, editable, open }: { state: AppState; editable: boolean; open: (which: ExtrasDialog) => void }) {
+    const { t } = useI18n();
+    return (
     <>
-      <button disabled={!state.model} onClick={() => open('export')}>Export</button>
-      <button disabled={!editable} onClick={() => open('import')}>Import</button>
-      <button disabled={!state.model} onClick={() => open('verify')}>Verify</button>
+      <button disabled={!state.model} onClick={() => open('export')}>{t('Export')}</button>
+      <button disabled={!editable} onClick={() => open('import')}>{t('Import')}</button>
+      <button disabled={!state.model} onClick={() => open('verify')}>{t('Verify')}</button>
     </>
-  ),
+    );
+  },
   NoModel,
   Dialogs: (props: DialogsProps) => {
     switch (props.which) {
