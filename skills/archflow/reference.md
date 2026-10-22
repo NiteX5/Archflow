@@ -1,4 +1,4 @@
-# Archflow model format — schema version 1
+# Archflow model format — schema version 2
 
 The model is the source of truth that Archflow validates and renders. It is
 declared by people or agents; Archflow never generates it from source code.
@@ -41,7 +41,9 @@ project:
   description: Optional.
 ```
 
-A newer `schemaVersion` is rejected without touching the files.
+A newer `schemaVersion` is rejected without touching the files. An older one
+must be upgraded with `archflow migrate --repo <path>` (or "Migrate" in the
+UI); the previous files are kept in the history.
 
 ## `overview.yaml`
 
@@ -60,8 +62,12 @@ elements:
   - id: orders-module          # required
     kind: module               # required, see kinds below
     name: Orders module        # required
+    summary: What it is, in one sentence.       # documentation panel: "what it is"
     description: ...
-    responsibility: ...
+    responsibility: What it is for.             # "what it is for"
+    howItWorks:                                 # "how it works", ordered steps
+      - Validates the request
+      - Saves the order
     parent: public-api         # containment / grouping (an element ID)
     tags: [backend]
     code:                      # repository-relative, no "..", no absolute paths
@@ -83,6 +89,8 @@ relations:
     from: orders-module        # required, element ID
     to: orders-db              # required, element ID
     description: ...
+    via: [jwt-guard, create-order-dto]   # functional dependencies involved (guards, DTOs...)
+    cardinality: n-1           # only for `references`: 1-1 | 1-n | n-1 | n-n
     notes: [...]
     provenance: { ... }
     metadata: { ... }
@@ -98,6 +106,7 @@ Unknown fields are errors (they are usually typos). Put free-form data in `metad
 | infrastructure | cloud-provider, environment, server, container, network, load-balancer, storage, message-broker, deployment, infrastructure-resource |
 | system | system, application, web-app, api, service, external-system, integration, domain |
 | internal | module, package, controller, component, repository, interface, library |
+| functional | guard, middleware, policy, dto, enum, contract, event, value-object |
 | behavior | function, method, business-rule |
 | data | database, table, data-entity, schema |
 | business | actor, use-case, process |
@@ -105,10 +114,23 @@ Unknown fields are errors (they are usually typos). Put free-form data in `metad
 
 The category is derived from the kind and drives which views show an element.
 
+**Functional dependencies** (`functional`) are artifacts that provide behaviour
+across modules: guards, RBAC/permission policies, middleware, DTOs, enums,
+contracts/ports, events and value objects. Put them under the module that
+defines them (`parent`), link components that use them with `uses`, and list
+them in `via` on the relations where they take part. `via` only accepts
+functional elements.
+
+Map levels (derived from the kind): infrastructure → apps & systems →
+modules (`module`, `package`) → components (other internal kinds and functional
+dependencies) → functions & behaviour.
+
 ### Relation types
 
 `depends-on`, `calls`, `contains`, `implements`, `deploys-to`, `reads`, `writes`,
-`sends-data-to`, `receives-data-from`, `participates-in`, `integrates-with`.
+`sends-data-to`, `receives-data-from`, `participates-in`, `integrates-with`,
+`uses` (a component uses a functional dependency), `references` (foreign key
+between tables/entities, optionally with `cardinality`).
 
 Adding a kind or relation type requires a schema change in Archflow; unknown
 values are rejected with the list of supported ones.
@@ -147,8 +169,22 @@ flow:
       action: Submits the cart
       condition: ...
       result: ...
+    - id: free
+      type: decision        # start | task (default) | decision | wait | end
+      from: web-storefront
+      action: Is the item in stock?
+      branches:             # only for decisions
+        - { condition: "yes", next: pay }
+        - { condition: "no", next: sorry }
+    - { id: pay, from: web-storefront, action: Pays, next: done }   # next: default is the following step
+    - { id: sorry, type: end, from: web-storefront, action: Shows "out of stock" }
+    - { id: done, type: end, from: customer, action: Receives confirmation }
   metadata: { ... }         # optional, free-form
 ```
+
+`next` and `branches[].next` must name steps of the same flow. A chain of
+`next` that loops back without a decision is an error. Process diagrams draw one
+lane per module of the participants.
 
 ## Decisions (`decisions.yaml`)
 

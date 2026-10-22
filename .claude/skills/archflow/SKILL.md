@@ -1,110 +1,160 @@
 ---
 name: archflow
-description: Read, verify and update the Archflow architecture model in .archflow/ together with code changes. Use when a task touches architecture, components, dependencies, data, infrastructure, flows or architecture decisions, when the user asks about the system's architecture, or when asked to document or update the architecture map.
+description: Build, read, verify and update the Archflow architecture model in .archflow/ (a didactic, hierarchical map of the app: infrastructure, apps, modules, components, functional dependencies such as guards/RBAC/DTOs/enums/contracts, relevant functions and processes). Use when asked to document or map the architecture, when a task changes components, dependencies, data, infrastructure or flows, or when the user asks how the system is built.
 ---
 
 # Archflow architecture model
 
-The repository's architecture is declared in `.archflow/` as YAML files
-(schema documented in `reference.md` next to this file). Archflow, a local
-tool, validates the model and renders it as diagrams. **You declare the model;
-Archflow never generates it from code, and neither should you rebuild it
-wholesale.** Your job is to keep it truthful and in sync with the code you
-change.
+`.archflow/` holds a declared, evidence-backed model of this repository. Archflow
+renders it as an explorable map (zoom from infrastructure down to functions),
+a documentation panel per element, and separate diagrams (use cases, data,
+sequences, processes). **You declare the model from evidence; nothing is
+generated wholesale and nothing is invented.** Format: `reference.md` (next to
+this file). Read it before writing YAML.
 
-## 1. Read before acting (cheap first, expand when needed)
+The goal is **didactic documentation**: a developer who has never seen the
+code should understand, by browsing the map, what each part is, what it is for,
+what it uses, and how it works.
 
-1. Read `.archflow/manifest.yaml` and `.archflow/overview.yaml` first.
-2. Identify the elements, relations and flows relevant to the task. Find them
-   by ID, name or code path, e.g. `grep -rn "<id or path>" .archflow --include=*.yaml`.
-3. Read only the files that define them (`systems.yaml`, `components/*.yaml`,
-   `data.yaml`, `infrastructure.yaml`, `flows/*.yaml`, `decisions.yaml`), and
-   follow their references (`parent`, `from`/`to`, `participants`,
-   `relatedTo`) as far as the task requires.
-4. Read the whole model when the change is cross-cutting (new system,
-   restructuring, infrastructure moves). Never skip a critical dependency just
-   to save tokens.
-5. Never read `.archflow/history/`; it is Archflow's change log, not the model.
+## 0. Before anything
 
-## 2. Explore the real code before implementing
+1. Read `.archflow/manifest.yaml` and `.archflow/overview.yaml` (if they exist).
+2. Run `archflow validate --repo .`. If it reports `migration-required`, run
+   `archflow migrate --repo .` first.
+3. Never read `.archflow/history/` (change log, not the model).
 
-- The model can be outdated. Check the code paths referenced by the relevant
-  elements (`code:`) before trusting them.
-- Search for existing modules, components and functionality to reuse before
-  creating new ones. Prefer extending what exists, and say what you reused.
-- When the task touches architecture, dependencies, routes, persistence,
-  infrastructure or business rules, compare the model with the code and note
-  every discrepancy you find.
+## 1. Identify the architecture style
 
-## 3. Update the model in the same task as the code
+Explore the repository (README, package manifests, top-level folders, entry
+points, framework config, Docker/Compose, Terraform, migrations) and decide
+which style the code follows. Map it onto Archflow's hierarchy:
 
-Update `.archflow/` whenever you add, remove, rename or move components,
-change dependencies or data access, change infrastructure, change a flow or
-business rule, or make an architecture decision. Rules:
+| Archflow level | What to look for |
+|---|---|
+| Infrastructure (only if it exists in code/config) | cloud providers, clusters, containers, databases, queues, CDN (Terraform, Compose, k8s, platform configs) |
+| Apps & systems | deployable units: API, web app, mobile app, workers; external systems and actors |
+| Modules | feature modules / bounded contexts / packages (`src/<feature>`, Nest `@Module`, Django apps, Maven modules, DDD contexts) |
+| Components | controllers, services, use cases, repositories, adapters, listeners **and functional dependencies** |
+| Functions & behaviour | only relevant ones: endpoints, handlers, use-case methods, jobs, business rules |
 
-- **Keep IDs stable.** Renaming or moving an element changes `name` or its
-  file, never its `id`. Relations, flows and views refer to IDs.
-- **Check for an existing entity before declaring one.** Search by name, kind
-  and code path. Never declare a second entity for the same thing; if you are
-  unsure whether two entities are the same, ask or report it.
-- **New IDs:** lowercase slug plus a short random suffix, e.g.
-  `billing-service-k3f9`. Never derive an ID only from a name or path.
-- **Do not invent.** Only declare elements, relations, rules and
-  explanations you can support with evidence (code, configuration, docs, or an
-  explicit statement from the user). Leave unknown fields out; never fill them
-  with plausible guesses. Add known gaps to `overview.yaml` `unknowns`.
-- **Record provenance** on what you declare or change:
-  ```yaml
-  provenance:
-    source: agent                 # you declared it
-    status: verified              # only if you checked it in the code now
-    evidence:
-      - description: Imports OrdersRepository
-        ref: src/orders/service.ts
-    verifiedRevision: <git short sha, if known>
-  ```
-  Use `status: inferred` or `status: pending-review` for anything you could
-  not confirm (e.g. derived from naming, partial reading, or dynamic code).
-  An inference must never be marked `verified`.
-- **Delete logically.** Set `lifecycle: deleted`, `deletedAt` and
-  `deletedReason` instead of removing entries, and mark the element's active
-  relations as deleted too. Restore by removing those fields; keep the ID.
-- **Presentation is separate.** Do not touch `views/*.yaml` layout or styles
-  unless asked; new elements appear in the derived views automatically.
-- Keep YAML readable and diff-friendly: one entity per list item, block style,
-  no reformatting of unrelated entries.
+Style hints: **modular / feature folders** → each feature is a `module`.
+**MVC** → modules by feature if present, else by layer (controllers, services,
+models) under the app. **DDD / Clean / Hexagonal** → bounded contexts are
+modules; ports are `contract`s, adapters are `component`s that `implements` them;
+domain events are `event`s; value objects are `value-object`s.
 
-## 4. Validate
+Containment is always `parent`. Deployment is a `deploys-to` relation from the
+app to the infrastructure element (the map nests it for you).
 
-Run the validator after editing the model:
+## 2. Functional dependencies (the important part)
 
-```bash
-archflow validate --repo .
-```
+Functional dependencies are code artifacts that give behaviour across modules.
+Declare them **only when they are used between modules or at a specific point
+that matters**, never as an inventory of every class.
 
-Fix every error. Exit code `0` = valid, `1` = invalid model, `2` = usage or
-path problem. If the `archflow` command is not available, say so explicitly
-in your report: the model is **not validated** in that case. Do not claim it
-is valid.
+| Kind | Typical evidence |
+|---|---|
+| `guard` | NestJS `@UseGuards(...)` / `CanActivate`, Angular guards, auth checks wrapping routes |
+| `policy` (RBAC / permissions) | `@Roles()`, `RolesGuard`, Spring `@PreAuthorize`, .NET `[Authorize(Roles=...)]`, CASL/permission maps |
+| `middleware` | Express/Koa middleware, Next.js `middleware.ts`, ASP.NET middleware, interceptors/pipes |
+| `dto` | request/response classes or schemas (`*Dto`, records, zod/yup/Joi schemas, Pydantic models) |
+| `enum` | enums or literal unions shared across modules (statuses, roles, types) |
+| `contract` | interfaces/ports/abstract classes other modules depend on; OpenAPI/gRPC/GraphQL contracts |
+| `event` | domain/integration events, message types published to a bus |
+| `value-object` | DDD value objects shared across the domain |
 
-A running Archflow UI reloads automatically after you save valid files and
-keeps showing the last valid version while files are invalid.
+How to link them:
+- Put the dependency under the module that **defines** it (`parent`).
+- When a component uses it: relation `type: uses` from the component to it.
+- When it is part of a call between modules/components, list it in that
+  relation's `via: [...]` (e.g. the guard, policy and DTO of an endpoint call).
+  The map shows these as chips on the line, and as small nodes when zoomed in.
+- External APIs are `external-system` elements, reached with `integrates-with`.
 
-## 5. Never
+## 3. Didactic fields (fill from evidence, never guess)
 
-- Never regenerate the whole model or all diagrams from the code.
-- Never ask Archflow (or another tool) to build the architecture automatically.
-- Never change IDs, delete history, or remove entries to make validation pass.
-- Never present inferred relations as verified.
-- Never copy secrets, credentials or environment values into the model.
+For every element you declare, when the code shows it:
+- `summary`: what it is, one sentence.
+- `responsibility`: what it is for.
+- `howItWorks`: ordered steps of what it does (read the code to write them).
+- `rules`: business rules it enforces.
+- `code`: path (and `symbol`) where it lives.
 
-## 6. Report at the end of the task
+Write these in the language the project uses for its docs, or the user's
+language. Leave a field out when the code does not show it: the UI shows it as
+"not documented". Never paraphrase a guess as a fact.
 
-Always include:
+## 4. Processes and diagrams
 
-1. Code files changed.
-2. Model files changed, and which elements/relations/flows were added,
-   changed, deleted or restored (by ID).
-3. Validation run and its result (or that it could not be run).
-4. Discrepancies found between model and code, and anything left as
-   `inferred`, `pending-review` or unknown that a person should review.
+- **Use cases**: `use-case` elements under the module that implements them;
+  actors connect with `participates-in`.
+- **Data**: `table`/`data-entity` elements; foreign keys as `references` with
+  `cardinality` (`1-1`, `1-n`, `n-1`, `n-n`); components that read/write them.
+- **Flows**: one file per important flow in `flows/`. Steps can be `start`,
+  `task`, `decision` (with `branches: [{condition, next}]`), `wait`, `end`.
+  Participants are the elements that perform the steps (apps, modules or
+  components). Declare 1–3 key flows per app, not every path.
+
+## 5. Workflow (incremental, validated)
+
+Work top-down and **validate after each step** with `archflow validate --repo .`:
+1. `overview.yaml`: summary, `keyElements`, `unknowns`.
+2. Infrastructure (if any) and apps/systems, actors, external systems.
+3. One module at a time: the module, its main components, its functional
+   dependencies, its relevant functions, its use cases and tables. Then the
+   relations of that module (with `via`).
+4. Key flows.
+5. `archflow verify --repo .`: fix real discrepancies (add the missing
+   relations with evidence), explain the ones that are not real.
+
+For a large repository, model the top levels first, report, and continue
+module by module in later steps instead of reading everything at once.
+
+## 6. Rules that never change
+
+- **Do not invent**: no modules, dependencies, rules or explanations without
+  evidence. Unknown information stays out of the model (or in `unknowns`).
+- **Never regenerate the whole model** from the code, and never ask Archflow or
+  another tool to build the architecture automatically: extend and correct the
+  existing model, preserving what people declared.
+- **Keep IDs stable**: lowercase slug plus a short random suffix
+  (`appointments-service-k3f9`). Never change an ID; rename with `name`.
+- **Search before declaring**: by name, kind and code path. Never create a
+  second entity for the same thing.
+- **Provenance** on what you declare: `source: agent`; `status: verified` only
+  if you checked it in the code now (with `evidence` or `verifiedRevision`);
+  otherwise `inferred` or `pending-review`.
+- **Delete logically**: `lifecycle: deleted` + `deletedAt` + `deletedReason`,
+  and delete its active relations too.
+- **Do not touch `views/`** unless asked: the map lays itself out.
+- Do not model: private helpers, getters/setters, framework boilerplate, every
+  DTO field, generated code, tests, or anything without a role in the
+  architecture.
+- Never copy secrets or environment values into the model.
+
+## 7. When the task is to change code
+
+1. Read the overview and only the model files relevant to the task (follow
+   `parent`, relations and `via` as far as needed; read the whole model for
+   cross-cutting changes).
+2. **Explore the real code before implementing**: the model can be outdated;
+   check the code paths of the relevant elements.
+3. **Search for existing modules, components and functional dependencies to
+   reuse** before creating new ones, and say what you reused.
+4. Implement, then keep the model in sync (next section).
+
+## 8. Keeping it in sync
+
+When a task changes code, update the model in the same task: new/renamed/moved
+modules and components, new or removed functional dependencies, changed calls
+(`via`), data access, flows and rules. Then validate.
+
+## 9. Report at the end
+
+1. Code files changed (if any).
+2. Model files changed, and the elements/relations/flows added, changed,
+   deleted or restored (by ID).
+3. Result of `archflow validate` and `archflow verify` (or that they could not
+   be run — then say the model is **not validated**).
+4. What is `inferred`, `pending-review` or in `unknowns` and needs review, and
+   which parts of the repository were not modelled yet.

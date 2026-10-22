@@ -25,7 +25,7 @@ describe('the skill', () => {
     for (const rule of [
       'manifest.yaml',
       'overview.yaml',
-      'Explore the real code',
+      'Explore the real code before implementing',
       'reuse',
       'Keep IDs stable',
       'Do not invent',
@@ -36,6 +36,14 @@ describe('the skill', () => {
       'Never regenerate the whole model',
       'Report at the end',
       'lifecycle: deleted',
+      // v2: hierarchy, functional dependencies, didactic fields, processes
+      'Identify the architecture style',
+      'Functional dependencies',
+      'via',
+      'howItWorks',
+      'archflow migrate --repo .',
+      'archflow verify --repo .',
+      'Do not model',
     ]) {
       expect(skill, rule).toContain(rule);
     }
@@ -45,7 +53,7 @@ describe('the skill', () => {
     expect(await runCli(['skill', 'install', '--repo', dir], io)).toBe(0);
     const target = path.join(dir, '.claude', 'skills', 'archflow');
     expect(await readFile(path.join(target, 'SKILL.md'), 'utf8')).toContain('name: archflow');
-    expect(await readFile(path.join(target, 'reference.md'), 'utf8')).toContain('schema version 1');
+    expect(await readFile(path.join(target, 'reference.md'), 'utf8')).toContain('schema version 2');
 
     expect(await runCli(['skill', 'install', '--repo', dir], io)).toBe(0);
     expect(out.join('\n')).toContain('Up to date');
