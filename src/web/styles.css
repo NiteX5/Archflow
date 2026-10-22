@@ -171,3 +171,71 @@ pre.diff { background: var(--panel); padding: 8px; border-radius: 6px; font-size
 .node-icon { color: var(--accent); flex: none; }
 .icon-preview { color: var(--accent); }
 .seq-icon { color: var(--accent); }
+
+/* ---- Architecture map ---- */
+.map-wrap { width: 100%; height: 100%; position: relative; }
+.map-empty { padding: 32px; color: var(--muted); }
+.map-node { width: 100%; height: 100%; border-radius: 10px; border: 1.5px solid var(--accent); background: var(--bg); box-shadow: 0 1px 3px rgb(0 0 0 / 12%); overflow: hidden; transition: opacity 0.15s; }
+.map-node.cat-infrastructure { --accent: var(--cat-infrastructure); }
+.map-node.cat-system { --accent: var(--cat-system); }
+.map-node.cat-internal { --accent: var(--cat-internal); }
+.map-node.cat-functional { --accent: var(--cat-functional); }
+.map-node.cat-behavior { --accent: var(--cat-behavior); }
+.map-node.cat-data { --accent: var(--cat-data); }
+.map-node.cat-business { --accent: var(--cat-business); }
+.map-node.cat-documentation { --accent: var(--cat-documentation); }
+.map-node.mode-expanded { background: color-mix(in srgb, var(--accent) 5%, var(--bg)); box-shadow: none; border-style: solid; }
+.map-node.mode-functional { border-radius: 17px; border-width: 1px; background: color-mix(in srgb, var(--accent) 10%, var(--bg)); }
+.map-node.prov-inferred, .map-node.prov-pending { border-style: dashed; }
+.map-node.selected { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.map-node.dim { opacity: 0.35; }
+.map-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.map-node.mode-expanded .map-head { border-bottom: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+.map-icon { color: var(--accent); flex: none; }
+.map-title { min-width: 0; flex: 1; }
+.map-name { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-kind { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.map-toggle { padding: 0 6px; border: none; background: transparent; font-size: 14px; color: var(--accent); }
+.map-body { padding: 0 10px 8px; font-size: 11px; }
+.map-summary { color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.map-summary.one-line { -webkit-line-clamp: 1; padding: 0 10px; font-size: 11px; margin-top: -4px; }
+.map-count { color: var(--accent); margin-top: 4px; font-weight: 600; }
+.map-pill { display: flex; align-items: center; gap: 6px; height: 100%; padding: 0 12px; font-size: 12px; color: var(--accent); font-weight: 600; white-space: nowrap; overflow: hidden; }
+.map-pill span { overflow: hidden; text-overflow: ellipsis; }
+.map-node .react-flow__handle { opacity: 0; }
+.react-flow__edge-path.map-edge { stroke: var(--muted); stroke-width: 1.4; opacity: 0.75; }
+.react-flow__edge-path.map-edge.uncertain { stroke-dasharray: 6 4; }
+.react-flow__edge-path.map-edge.highlight { stroke: var(--accent); stroke-width: 2.4; opacity: 1; }
+.react-flow__edge-path.map-edge.dim { opacity: 0.12; }
+.react-flow__edge.selected .react-flow__edge-path.map-edge { stroke: var(--accent); stroke-width: 2.6; opacity: 1; }
+.map-arrowhead { fill: var(--muted); }
+.map-edge-label { position: absolute; pointer-events: all; display: flex; flex-direction: column; align-items: center; gap: 2px; z-index: 1001; }
+.map-edge-label.dim { opacity: 0.15; }
+.edge-types { font-size: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; color: var(--text); }
+.edge-chips { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; max-width: 260px; }
+.edge-chips.inline { justify-content: flex-start; display: inline-flex; vertical-align: middle; }
+.chip { font-size: 10px; line-height: 16px; padding: 0 6px; border-radius: 8px; border: 1px solid var(--cat-functional); color: var(--cat-functional); background: var(--bg); cursor: pointer; }
+.chip.more { cursor: default; }
+.lang-select { margin-left: 8px; }
+
+/* ---- Documentation panel ---- */
+.detail-title { display: flex; align-items: center; gap: 8px; }
+.cat-icon.cat-infrastructure { color: var(--cat-infrastructure); }
+.cat-icon.cat-system { color: var(--cat-system); }
+.cat-icon.cat-internal { color: var(--cat-internal); }
+.cat-icon.cat-functional { color: var(--cat-functional); }
+.cat-icon.cat-behavior { color: var(--cat-behavior); }
+.cat-icon.cat-data { color: var(--cat-data); }
+.cat-icon.cat-business { color: var(--cat-business); }
+.panel-section { border-top: 1px solid var(--border); padding-top: 6px; margin-top: 10px; }
+.panel-section h3 { font-size: 13px; margin: 4px 0 6px; color: var(--text); }
+.panel-section h3.clickable { cursor: pointer; user-select: none; }
+.panel-section .caret { display: inline-block; width: 14px; color: var(--muted); }
+.panel-section .summary { font-size: 14px; margin: 4px 0 8px; }
+ul.plain { list-style: none; padding-left: 0; margin: 0; }
+ul.plain li { margin: 3px 0; }
+.react-flow__minimap { background: var(--panel); }
+.react-flow__minimap-mask { fill: color-mix(in srgb, var(--bg) 70%, transparent); }
+.react-flow__controls-button { background: var(--panel); border-bottom-color: var(--border); color: var(--text); fill: var(--text); }
+.react-flow__controls-button:hover { background: var(--bg); }
+.react-flow__background { background: var(--bg); }
