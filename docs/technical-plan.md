@@ -102,7 +102,7 @@ se produce modelo: quien llama conserva la última versión válida.
 | U7 — Paquete distribuible, prueba de humo del paquete, CI multiplataforma, documentación | AM-001 (build), criterios globales 1, 15, 16 | Hecho: CI en verde en Linux, macOS y Windows (pruebas, paquete instalado sin red); pruebas de navegador solo en Linux |
 
 | v2 · Fase 1 — Esquema 2 (dependencias funcionales, campos didácticos, `via`, `uses`/`references`, pasos de proceso), migración v1→v2, skill reescrita, ejemplo modular | Rediseño v2 (plan aprobado) | Hecho |
-| v2 · Fase 2 — Mapa jerárquico con layout automático (ELK), aristas agregadas, zoom semántico, panel didáctico, i18n es/en | | Pendiente |
+| v2 · Fase 2 — Mapa jerárquico con layout automático (ELK), aristas agregadas, zoom semántico, panel didáctico, i18n es/en | | Hecho |
 | v2 · Fase 3 — Navegación por capas y foco compartido (menú, doble clic, migas de pan, URL) | | Pendiente |
 | v2 · Fase 4 — Diagramas didácticos aparte: casos de uso y ER por módulo, secuencia por flujo, proceso por app | | Pendiente |
 
@@ -127,6 +127,14 @@ se produce modelo: quien llama conserva la última versión válida.
 - **Distribución:** tarball npm con `dist/` compilado y dependencias incluidas
   (`bundleDependencies`), instalable sin red. Requiere Node.js 22. Ejecutables
   autónomos (Node SEA) quedan como mejora futura.
+
+### Decisiones de la fase 2 (v2)
+
+- **Zoom semántico**: un contenedor se abre solo cuando el usuario *acerca* el zoom y ocupa al menos 300 px en pantalla con el 60 % visible. Solo se cierran por zoom los contenedores que se abrieron por zoom: los abiertos a mano (▸) permanecen abiertos. Al cambiar, la cámara mantiene el contenedor en su sitio.
+- **Detalle**: las dependencias funcionales y las funciones aparecen a partir de un zoom de 1.15; antes se ven como chips en las aristas.
+- **Aristas**: una por par de elementos visibles, con el contador de relaciones y la unión de sus `via`. Las etiquetas solo aparecen al resaltar.
+- **Infraestructura**: si está declarada, las apps con `deploys-to` se anidan en ella (solo en el mapa).
+- **Ajuste manual**: los desplazamientos se guardan en una vista de tipo `map` (offsets sobre el layout automático) y se pueden descartar con "Reordenar".
 
 ### Pendientes y mejoras futuras (no implementadas)
 
