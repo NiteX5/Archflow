@@ -101,6 +101,11 @@ se produce modelo: quien llama conserva la última versión válida.
 | U6 — Importación/exportación nativa, Mermaid y draw.io; SVG/PNG/PDF; verificación | AM-017, AM-018, AM-019, AM-020 | Hecho |
 | U7 — Paquete distribuible, prueba de humo del paquete, CI multiplataforma, documentación | AM-001 (build), criterios globales 1, 15, 16 | Hecho: CI en verde en Linux, macOS y Windows (pruebas, paquete instalado sin red); pruebas de navegador solo en Linux |
 
+| v2 · Fase 1 — Esquema 2 (dependencias funcionales, campos didácticos, `via`, `uses`/`references`, pasos de proceso), migración v1→v2, skill reescrita, ejemplo modular | Rediseño v2 (plan aprobado) | Hecho |
+| v2 · Fase 2 — Mapa jerárquico con layout automático (ELK), aristas agregadas, zoom semántico, panel didáctico, i18n es/en | | Pendiente |
+| v2 · Fase 3 — Navegación por capas y foco compartido (menú, doble clic, migas de pan, URL) | | Pendiente |
+| v2 · Fase 4 — Diagramas didácticos aparte: casos de uso y ER por módulo, secuencia por flujo, proceso por app | | Pendiente |
+
 ### Decisiones posteriores
 
 - **Lienzo:** `@xyflow/react` (React Flow): zoom, desplazamiento, subflujos para

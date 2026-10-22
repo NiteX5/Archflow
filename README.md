@@ -53,6 +53,7 @@ Other commands:
 | `archflow validate --repo <path> [--json]` | Validate the model. Exit code 0 valid, 1 invalid, 2 usage/path error. |
 | `archflow verify --repo <path> [--json]` | Report discrepancies between the model and the code (exit code 1 when there are findings). Never changes the model. |
 | `archflow init --repo <path> [--name <n>]` | Create an empty model (never overwrites). |
+| `archflow migrate --repo <path>` | Upgrade a model to the current schema version (previous files kept in the history). |
 | `archflow skill install --repo <path> [--force]` | Install the Claude Code skill into `.claude/skills/archflow/`. |
 
 ## The model
@@ -69,7 +70,10 @@ Other commands:
 ```
 
 Format reference: [`skills/archflow/reference.md`](skills/archflow/reference.md).
-Example: [`examples/sample`](examples/sample) (fictional). Archflow's own
+Examples (fictional): [`examples/sample`](examples/sample) and
+[`examples/modular-app`](examples/modular-app), a modular API with functional
+dependencies (guards, RBAC, DTOs, enums, contracts, events) and a process with
+decisions. Archflow's own
 architecture is declared in [`.archflow/`](.archflow) and can be opened with
 `archflow serve --repo .`.
 
