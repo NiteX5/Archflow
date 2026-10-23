@@ -24,12 +24,14 @@ afterAll(async () => {
   await browser?.close();
 });
 
-async function open(repoPath?: string) {
+/** Opens the UI; by default switches to the sample's "System overview" view (classic canvas). */
+async function open(repoPath?: string, view: string | null = 'System overview') {
   server = await startServer({ repo: repoPath, port: 0, strictPort: true, webDir, log: () => {}, extensions: serverExtensions });
-  page = await browser.newPage({ viewport: { width: 1500, height: 950 } });
+  page = await browser.newPage({ viewport: { width: 1500, height: 950 }, locale: 'en-US' });
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('dialog', (d) => void d.accept(d.type() === 'prompt' ? 'No longer used' : undefined));
   await page.goto(server.url);
+  if (repoPath && view) await page.locator('.sidebar .views a', { hasText: view }).first().click();
 }
 
 beforeEach(async () => {
@@ -55,7 +57,9 @@ describe('Archflow UI', () => {
     await page.getByLabel('Repository path').fill(repo);
     await page.getByRole('button', { name: 'Open' }).click();
     await expect.poll(() => page.locator('.status').first().textContent()).toBe('valid');
-    await expect.poll(() => page.locator('.react-flow__node').count()).toBe(4);
+    // The architecture map is the first view.
+    await expect.poll(() => page.locator('.react-flow__node[data-id="customer"]').count()).toBe(1);
+    expect(await page.locator('.sidebar .views li.active').first().textContent()).toContain('Architecture map');
   });
 
   it('explains bad paths', async () => {
@@ -69,6 +73,7 @@ describe('Archflow UI', () => {
     await open(repo);
     await page.locator('.react-flow__node', { hasText: 'Public API' }).click();
     await expect.poll(() => page.locator('.detail h2').textContent()).toBe('Public API');
+    await page.locator('.detail').getByText('More details').click();
     await page.locator('.detail').getByText('Deployment').click();
     await expect.poll(() => page.locator('.sidebar li.active').textContent()).toContain('Deployment');
     // Selection is preserved: same element, same ID.
@@ -231,7 +236,7 @@ describe('Archflow UI', () => {
   it('goes from a clean repository to an editable map updated from the files', async () => {
     const clean = await mkdtemp(path.join(tmpdir(), 'archflow-clean-'));
     try {
-      await open(clean);
+      await open(clean, null);
       await page.getByRole('button', { name: 'Create empty model' }).click();
       await expect.poll(() => page.locator('.status').first().textContent()).toBe('valid');
       await page.getByRole('button', { name: '+ Element' }).click();
@@ -249,6 +254,67 @@ describe('Archflow UI', () => {
     } finally {
       await rm(clean, { recursive: true, force: true });
     }
+  });
+
+  describe('architecture map', () => {
+    const modular = path.resolve('examples/modular-app');
+    const node = (id: string) => page.locator(`.react-flow__node[data-id="${id}"]`);
+    const toggle = async (id: string) => {
+      await page.locator('.react-flow__controls-fitview').click();
+      await node(id).locator('.map-toggle').click();
+    };
+
+    it('starts with the top level and reveals the content of a container on demand', async () => {
+      await open(modular, null);
+      await expect.poll(() => node('aws-cloud').count()).toBe(1);
+      expect(await node('ecs-cluster').count()).toBe(0);
+      expect(await node('aws-cloud').textContent()).toContain('2 inside');
+      await toggle('aws-cloud');
+      await expect.poll(() => node('ecs-cluster').count()).toBe(1);
+      await toggle('aws-cloud');
+      await expect.poll(() => node('ecs-cluster').count()).toBe(0);
+    });
+
+    it('opens containers when zooming in on them and closes them when zooming out', async () => {
+      await open(modular, null);
+      await expect.poll(() => node('aws-cloud').count()).toBe(1);
+      for (let i = 0; i < 4 && (await node('ecs-cluster').count()) === 0; i++) {
+        const b = (await node('aws-cloud').boundingBox())!;
+        await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+        await page.mouse.wheel(0, -300);
+        await page.waitForTimeout(600);
+      }
+      await expect.poll(() => node('ecs-cluster').count()).toBe(1);
+      await page.mouse.move(700, 500);
+      for (let i = 0; i < 10; i++) {
+        await page.mouse.wheel(0, 400);
+        await page.waitForTimeout(150);
+      }
+      await expect.poll(() => node('ecs-cluster').count()).toBe(0);
+    });
+
+    it('aggregates relations between closed containers and shows functional dependencies as chips', async () => {
+      await open(modular, null);
+      const chip = page.locator('.edge-chips .chip', { hasText: 'JwtAuthGuard' });
+      await expect.poll(() => chip.count()).toBeGreaterThan(0);
+      await chip.first().click();
+      await expect.poll(() => page.locator('.detail h2').textContent()).toBe('JwtAuthGuard');
+      const panel = await page.locator('.detail').textContent();
+      expect(panel).toContain('What it is and what it is for');
+      expect(panel).toContain('Rejects requests without a valid access token.');
+      expect(panel).toContain('Where it is used / what it uses');
+      expect(panel).toContain('AppointmentsController');
+      expect(panel).toContain('How it works');
+      expect(panel).toContain('Verifies signature and expiry');
+    });
+
+    it('switches the interface to Spanish', async () => {
+      await open(modular, null);
+      await page.getByLabel('Language').selectOption('es');
+      await expect.poll(() => page.locator('.sidebar').textContent()).toContain('Mapa de arquitectura');
+      await node('aws-cloud').click();
+      await expect.poll(() => page.locator('.detail').textContent()).toContain('Qué es y para qué sirve');
+    });
   });
 });
 

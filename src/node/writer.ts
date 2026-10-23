@@ -199,6 +199,7 @@ function resolveView(draft: Draft, viewId: string): string {
   const rest = viewId.slice(BUILTIN_PREFIX.length);
   const [type, flow] = rest.split(':') as [ViewType, string | undefined];
   const names: Record<string, string> = {
+    map: 'Architecture map',
     overview: 'Architecture overview',
     dependencies: 'Dependencies',
     deployment: 'Infrastructure & deployment',

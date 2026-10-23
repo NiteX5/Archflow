@@ -256,7 +256,11 @@ export const decisionSchema = z.strictObject({
 
 export const decisionsFileSchema = z.strictObject({ decisions: z.array(decisionSchema) });
 
-export const VIEW_TYPES = ['overview', 'dependencies', 'sequence', 'deployment', 'data', 'business', 'free'] as const;
+/**
+ * `map` stores optional manual adjustments of the architecture map: its layout
+ * entries are offsets applied on top of the automatic layout.
+ */
+export const VIEW_TYPES = ['overview', 'dependencies', 'sequence', 'deployment', 'data', 'business', 'free', 'map'] as const;
 export type ViewType = (typeof VIEW_TYPES)[number];
 
 export const SHAPES = ['rectangle', 'rounded', 'ellipse', 'cylinder', 'hexagon', 'document'] as const;

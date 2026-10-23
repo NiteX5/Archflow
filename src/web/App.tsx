@@ -10,6 +10,8 @@ import { iconFor } from './components/icons.js';
 import { BUILTIN_PREFIX, deriveView, listViews, searchElements, VIEW_TYPE_LABELS } from '../core/views.js';
 import { api, RequestError, subscribeState } from './api.js';
 import { Canvas, type LayoutEntry, type Selection } from './components/Canvas.js';
+import { MapCanvas, type MapSelection } from './components/MapCanvas.js';
+import { LanguageSelect, useI18n } from './i18n.js';
 import { DetailPanel } from './components/DetailPanel.js';
 import { Dialog } from './components/Dialog.js';
 import { ElementForm, NoteForm, RelationForm } from './components/forms.js';
@@ -19,7 +21,11 @@ import { RepoPicker } from './components/RepoPicker.js';
 import { SequenceView } from './components/SequenceView.js';
 import { Extras, type ExtrasDialog } from './extras.js';
 
-const VIEW_KEY = 'archflow:view';
+const VIEW_KEY = 'archflow:view2';
+/** The architecture map is the main view; other views are listed below it. */
+export const MAP_VIEW = 'map';
+/** Built-in views superseded by the map (declared ones stay available). */
+const SUPERSEDED = new Set([`${BUILTIN_PREFIX}overview`, `${BUILTIN_PREFIX}dependencies`]);
 
 type DialogState =
   | null
@@ -39,12 +45,14 @@ export function App() {
   const [connected, setConnected] = useState(true);
   const [viewId, setViewId] = useState<string | null>(() => {
     try {
-      return localStorage.getItem(VIEW_KEY);
+      return localStorage.getItem(VIEW_KEY) ?? MAP_VIEW;
     } catch {
-      return null;
+      return MAP_VIEW;
     }
   });
-  const [selection, setSelection] = useState<Selection>(null);
+  const { t } = useI18n();
+  const [selection, setSelection] = useState<MapSelection>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -65,8 +73,16 @@ export function App() {
   }, [toast]);
 
   const model = state?.model ?? null;
-  const views = useMemo(() => (model ? listViews(model) : []), [model]);
-  const current = views.find((v) => v.view.id === viewId) ?? views[0];
+  const views = useMemo(() => (model ? listViews(model).filter((v) => !SUPERSEDED.has(v.view.id)) : []), [model]);
+  const onMap = viewId === MAP_VIEW || !views.some((v) => v.view.id === viewId);
+  const current = onMap ? undefined : views.find((v) => v.view.id === viewId);
+  const mapView = model?.views.find((v) => v.type === 'map');
+  const offsets = useMemo(
+    () => Object.fromEntries(Object.entries(mapView?.layout ?? {}).map(([id, e]) => [id, { x: e.x, y: e.y }])),
+    [mapView],
+  );
+  /** Selection as understood by the classic views (they have no aggregated edges). */
+  const classicSelection: Selection = selection?.type === 'edge' ? null : selection;
   const derived = useMemo(
     () => (model && current ? deriveView(model, current.view, current.builtin, { showDeleted }) : null),
     [model, current, showDeleted],
@@ -83,7 +99,7 @@ export function App() {
         setState(res.state);
         const created = current && res.createdViews[current.view.id];
         if (created) setViewId(created);
-        if (done) setToast({ text: done });
+        if (done) setToast({ text: t(done) });
         return true;
       } catch (err) {
         if (err instanceof RequestError && err.body.error === 'conflict') {
@@ -103,7 +119,15 @@ export function App() {
         return false;
       }
     },
-    [current],
+    [current, t],
+  );
+
+  const onOffset = useCallback(
+    (id: string, offset: { x: number; y: number }) => {
+      const saved = mapView?.layout?.[id] ?? null;
+      void run([{ op: 'layout', view: mapView?.id ?? `${BUILTIN_PREFIX}map`, entries: { [id]: offset }, expected: { [id]: hashValue(saved) } }]);
+    },
+    [mapView, run],
   );
 
   const onLayout = useCallback(
@@ -116,12 +140,12 @@ export function App() {
     [derived, run],
   );
 
-  if (!state) return <div className="center-page">Connecting to the Archflow service…</div>;
+  if (!state) return <div className="center-page">{t('Connecting to the Archflow service…')}</div>;
   if (state.status === 'no-repo') return <RepoPicker onOpened={setState} />;
 
   const inView = (id: string) => !!derived?.nodes.some((n) => n.id === id);
   const currentViewHas =
-    !selection || !derived ? true : selection.type === 'element' ? inView(selection.id) : derived.edges.some((e) => e.id === selection.id);
+    onMap || !selection || !derived ? true : selection.type === 'element' ? inView(selection.id) : derived.edges.some((e) => e.id === selection.id);
 
   const close = () => setDialog(null);
 
@@ -129,20 +153,21 @@ export function App() {
     <div className="app">
       <header className="topbar">
         <strong className="brand">Archflow</strong>
-        <span className="project">{model?.manifest.project.name ?? 'No model loaded'}</span>
+        <span className="project">{model?.manifest.project.name ?? t('No model loaded')}</span>
         <span className="repo" title={state.repo ?? ''}>{state.repo}</span>
-        <span className={`status status-${state.status}`}>{state.status}</span>
-        {!connected && <span className="status status-invalid">service disconnected</span>}
+        <span className={`status status-${state.status}`}>{t(state.status)}</span>
+        {!connected && <span className="status status-invalid">{t('service disconnected')}</span>}
         <span className="spacer" />
         {model && (
           <div className="toolbar">
-            <button disabled={!editable} onClick={() => setDialog({ kind: 'element', defaults: {} })}>+ Element</button>
-            <button disabled={!editable} onClick={() => setDialog({ kind: 'relation', defaults: {} })}>+ Relation</button>
-            <button disabled={!editable} onClick={() => setDialog({ kind: 'free-view' })}>+ Free view</button>
-            <button onClick={() => setDialog({ kind: 'history' })}>History</button>
+            <button disabled={!editable} onClick={() => setDialog({ kind: 'element', defaults: {} })}>{t('+ Element')}</button>
+            <button disabled={!editable} onClick={() => setDialog({ kind: 'relation', defaults: {} })}>{t('+ Relation')}</button>
+            <button disabled={!editable} onClick={() => setDialog({ kind: 'free-view' })}>{t('+ Free view')}</button>
+            <button onClick={() => setDialog({ kind: 'history' })}>{t('History')}</button>
             <Extras.Buttons state={state} editable={editable} open={(which) => setDialog({ kind: 'extras', which })} />
           </div>
         )}
+        <LanguageSelect />
       </header>
 
       {state.status === 'no-model' ? (
@@ -150,10 +175,10 @@ export function App() {
       ) : (
         <div className="workspace">
           <nav className="sidebar">
-            <input type="search" placeholder="Find by name, ID or code path" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Find elements" />
+            <input type="search" placeholder={t('Find by name, ID or code path')} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={t('Find by name, ID or code path')} />
             {query && (
               <ul className="hits">
-                {hits.length === 0 && <li className="muted">No matches</li>}
+                {hits.length === 0 && <li className="muted">{t('No matches')}</li>}
                 {hits.map((h) => (
                   <li key={h.id}>
                     <a onClick={() => setSelection({ type: 'element', id: h.id })}>
@@ -163,20 +188,42 @@ export function App() {
                 ))}
               </ul>
             )}
-            <h3>Views</h3>
+            <ul className="views">
+              <li className={onMap ? 'active' : ''}>
+                <a onClick={() => setViewId(MAP_VIEW)}>
+                  <strong>{t('Architecture map')}</strong>
+                </a>
+              </li>
+            </ul>
+            <h3>{t('Views')}</h3>
             <ul className="views">
               {views.map(({ view, builtin }) => (
                 <li key={view.id} className={view.id === current?.view.id ? 'active' : ''}>
                   <a onClick={() => setViewId(view.id)}>
                     {view.name}
-                    <span className="muted"> {VIEW_TYPE_LABELS[view.type]}{builtin ? ' · default' : ''}</span>
+                    <span className="muted"> {t(VIEW_TYPE_LABELS[view.type])}{builtin ? ` · ${t('default')}` : ''}</span>
                   </a>
                 </li>
               ))}
             </ul>
-            <label className="toggle">
-              <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} /> Show deleted
-            </label>
+            {!onMap && (
+              <label className="toggle">
+                <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} /> {t('Show deleted')}
+              </label>
+            )}
+            {onMap && editable && Object.keys(offsets).length > 0 && (
+              <button
+                className="block"
+                onClick={() =>
+                  run(
+                    [{ op: 'layout', view: mapView!.id, entries: Object.fromEntries(Object.keys(offsets).map((id) => [id, null])) }],
+                    'Reset to automatic layout',
+                  )
+                }
+              >
+                {t('Reorder')}
+              </button>
+            )}
             {derived && editable && derived.view.type !== 'sequence' && Object.keys(derived.view.layout ?? {}).length > 0 && (
               <button
                 className="block"
@@ -188,12 +235,12 @@ export function App() {
                   )
                 }
               >
-                Reset to automatic layout
+                {t('Reset to automatic layout')}
               </button>
             )}
             {derived && editable && derived.view.type !== 'sequence' && (
               <button className="block" onClick={() => setDialog({ kind: 'extras', which: 'view-settings' })}>
-                View settings
+                {t('View settings')}
               </button>
             )}
           </nav>
@@ -202,20 +249,34 @@ export function App() {
             <IssuesPanel state={state} onState={setState} />
             {derived && derived.incomplete.length > 0 && (
               <div className="incomplete" role="status">
-                <strong>This view is incomplete.</strong>
+                <strong>{t('This view is incomplete.')}</strong>
                 <ul>{derived.incomplete.map((r) => <li key={r}>{r}</li>)}</ul>
               </div>
             )}
             <div className="canvas" id="canvas">
-              {derived &&
+              {onMap && model && (
+                <ReactFlowProvider>
+                  <MapCanvas
+                    model={model}
+                    expanded={expanded}
+                    setExpanded={setExpanded}
+                    selection={selection}
+                    onSelect={setSelection}
+                    editable={editable}
+                    offsets={offsets}
+                    onOffset={onOffset}
+                  />
+                </ReactFlowProvider>
+              )}
+              {!onMap && derived &&
                 (derived.view.type === 'sequence' ? (
-                  <SequenceView derived={derived} selection={selection} onSelect={setSelection} />
+                  <SequenceView derived={derived} selection={classicSelection} onSelect={setSelection} />
                 ) : (
                   <ReactFlowProvider key={derived.view.id}>
                     <Canvas
                       derived={derived}
                       boxes={boxes}
-                      selection={selection}
+                      selection={classicSelection}
                       onSelect={setSelection}
                       editable={editable && !derived.flow}
                       onLayout={onLayout}
@@ -234,24 +295,24 @@ export function App() {
               onOpenView={setViewId}
               currentViewHas={currentViewHas}
               actions={
-                editable && selection ? (
+                editable && classicSelection ? (
                   <SelectionActions
                     model={model}
-                    selection={selection}
+                    selection={classicSelection}
                     viewId={derived?.view.id}
                     viewIsFree={derived?.view.type === 'free'}
                     viewStyles={derived?.view.styles ?? {}}
-                    inView={selection.type === 'element' && inView(selection.id)}
+                    inView={classicSelection.type === 'element' && inView(classicSelection.id)}
                     view={derived?.view}
                     run={run}
                     edit={() => {
-                      const expected = entityHash(model, selection.id);
-                      if (selection.type === 'element') setDialog({ kind: 'element', element: model.elements.find((e) => e.id === selection.id), expected });
-                      else setDialog({ kind: 'relation', relation: model.relations.find((r) => r.id === selection.id), expected });
+                      const expected = entityHash(model, classicSelection.id);
+                      if (classicSelection.type === 'element') setDialog({ kind: 'element', element: model.elements.find((e) => e.id === classicSelection.id), expected });
+                      else setDialog({ kind: 'relation', relation: model.relations.find((r) => r.id === classicSelection.id), expected });
                     }}
                     note={() => {
-                      const entity = (model.elements.find((e) => e.id === selection.id) ?? model.relations.find((r) => r.id === selection.id))!;
-                      setDialog({ kind: 'note', id: selection.id, entity, expected: entityHash(model, selection.id) });
+                      const entity = (model.elements.find((e) => e.id === classicSelection.id) ?? model.relations.find((r) => r.id === classicSelection.id))!;
+                      setDialog({ kind: 'note', id: classicSelection.id, entity, expected: entityHash(model, classicSelection.id) });
                     }}
                   />
                 ) : undefined
