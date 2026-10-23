@@ -1,0 +1,7 @@
+elements:
+  - { id: appointments-table, kind: table, name: appointments, parent: rds-postgres }
+  - { id: patients-table, kind: table, name: patients, parent: rds-postgres }
+  - { id: payments-table, kind: table, name: payments, parent: rds-postgres }
+relations:
+  - { id: fk-appt-patient, type: references, from: appointments-table, to: patients-table, cardinality: n-1 }
+  - { id: fk-payment-appt, type: references, from: payments-table, to: appointments-table, cardinality: 1-1 }

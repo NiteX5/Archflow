@@ -2,6 +2,7 @@ import { opsRequestSchema, type OpsResult } from '../core/ops.js';
 import { formatPath } from '../core/issues.js';
 import { History, planRevert } from '../node/history.js';
 import { initModel, InitError } from '../node/init.js';
+import { MigrationFailed, migrateRepository } from '../node/migrate.js';
 import { watchModel, type ModelWatcher } from '../node/watch.js';
 import type { Workspace } from '../node/workspace.js';
 import { applyOps, commitFiles, freshValidSnapshot, WriteError } from '../node/writer.js';
@@ -59,6 +60,21 @@ export function serverExtensions(workspace: Workspace): { routes: Route[]; start
   };
 
   const routes: Route[] = [
+    {
+      method: 'POST',
+      path: '/api/migrate',
+      handler: async () =>
+        workspace.exclusive(async () => {
+          if (!workspace.root) throw new HttpError(409, 'no-repo', 'No repository is open');
+          try {
+            const result = await migrateRepository(workspace.root, historyOf());
+            return { result, state: await workspace.reloadUnlocked() };
+          } catch (err) {
+            if (err instanceof MigrationFailed) throw new HttpError(422, 'migration-failed', err.message, err.issues.length ? { issues: err.issues } : {});
+            throw err;
+          }
+        }),
+    },
     {
       method: 'POST',
       path: '/api/init',

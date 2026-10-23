@@ -1,0 +1,10 @@
+elements:
+  - { id: notifications-module, kind: module, name: Notifications module, parent: clinic-api, summary: Sends e-mails when things happen. }
+  - id: booking-listener
+    kind: component
+    name: BookingConfirmationListener
+    parent: notifications-module
+    summary: Sends the confirmation e-mail.
+relations:
+  - { id: rel-listener-event, type: uses, from: booking-listener, to: appointment-booked }
+  - { id: rel-listener-mail, type: integrates-with, from: booking-listener, to: sendgrid }

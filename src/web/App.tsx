@@ -199,7 +199,7 @@ export function App() {
           </nav>
 
           <main className="main">
-            <IssuesPanel state={state} />
+            <IssuesPanel state={state} onState={setState} />
             {derived && derived.incomplete.length > 0 && (
               <div className="incomplete" role="status">
                 <strong>This view is incomplete.</strong>

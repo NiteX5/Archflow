@@ -11,6 +11,7 @@
   --cat-infrastructure: #8250df;
   --cat-system: #0969da;
   --cat-internal: #1a7f37;
+  --cat-functional: #bf3989;
   --cat-behavior: #bf8700;
   --cat-data: #bc4c00;
   --cat-business: #cf222e;
@@ -108,6 +109,7 @@ input, select, textarea { background: var(--bg); border: 1px solid var(--border)
 .node.cat-infrastructure { --accent: var(--cat-infrastructure); }
 .node.cat-system { --accent: var(--cat-system); }
 .node.cat-internal { --accent: var(--cat-internal); }
+.node.cat-functional { --accent: var(--cat-functional); }
 .node.cat-behavior { --accent: var(--cat-behavior); }
 .node.cat-data { --accent: var(--cat-data); }
 .node.cat-business { --accent: var(--cat-business); }

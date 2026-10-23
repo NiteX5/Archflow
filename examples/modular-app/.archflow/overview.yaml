@@ -1,0 +1,8 @@
+summary: >-
+  Patients book medical appointments on the web. A NestJS API organised in
+  modules (auth, patients, appointments, billing, notifications) runs on AWS
+  and stores data in PostgreSQL.
+context: Fictional example. Not a real system.
+keyElements: [clinic-api, appointments-module, aws-cloud]
+unknowns:
+  - Retry policy for failed payments is not documented.

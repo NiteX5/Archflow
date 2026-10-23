@@ -1,0 +1,55 @@
+elements:
+  - id: auth-module
+    kind: module
+    name: Auth module
+    parent: clinic-api
+    summary: Authentication and authorization.
+    responsibility: Issues JWTs and enforces roles.
+    code: [{ path: apps/api/src/auth }]
+  - id: auth-controller
+    kind: controller
+    name: AuthController
+    parent: auth-module
+    summary: Login and refresh endpoints.
+    code: [{ path: apps/api/src/auth/auth.controller.ts, symbol: AuthController }]
+  - id: auth-service
+    kind: component
+    name: AuthService
+    parent: auth-module
+    summary: Validates credentials and signs tokens.
+    howItWorks:
+      - Looks up the user by e-mail
+      - Compares the password hash
+      - Signs a JWT with the user's role
+    code: [{ path: apps/api/src/auth/auth.service.ts, symbol: AuthService }]
+  - id: jwt-guard
+    kind: guard
+    name: JwtAuthGuard
+    parent: auth-module
+    summary: Rejects requests without a valid access token.
+    responsibility: Protects every private endpoint.
+    howItWorks:
+      - Reads the Bearer token from the Authorization header
+      - Verifies signature and expiry
+      - Attaches the user to the request or answers 401
+    code: [{ path: apps/api/src/auth/jwt.guard.ts, symbol: JwtAuthGuard }]
+  - id: roles-guard
+    kind: policy
+    name: RolesGuard (RBAC)
+    parent: auth-module
+    summary: Allows an endpoint only to the roles declared with @Roles().
+    howItWorks:
+      - Reads the roles required by the handler
+      - Compares them with the user's role
+      - Answers 403 when the role is missing
+    code: [{ path: apps/api/src/auth/roles.guard.ts, symbol: RolesGuard }]
+  - id: role-enum
+    kind: enum
+    name: Role
+    parent: auth-module
+    summary: "User roles: PATIENT, RECEPTIONIST, ADMIN."
+    code: [{ path: apps/api/src/auth/role.enum.ts, symbol: Role }]
+  - { id: login-dto, kind: dto, name: LoginDto, parent: auth-module, summary: E-mail and password sent to /auth/login. }
+relations:
+  - { id: rel-authc-auths, type: calls, from: auth-controller, to: auth-service, via: [login-dto] }
+  - { id: rel-roles-uses-role, type: uses, from: roles-guard, to: role-enum }

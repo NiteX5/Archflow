@@ -1,4 +1,4 @@
-schemaVersion: 1
+schemaVersion: 2
 project:
   name: Archflow
   description: Local tool to explore, edit and maintain a declared software architecture model.

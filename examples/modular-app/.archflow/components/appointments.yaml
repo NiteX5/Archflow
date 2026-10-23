@@ -1,0 +1,57 @@
+elements:
+  - id: appointments-module
+    kind: module
+    name: Appointments module
+    parent: clinic-api
+    summary: Booking, rescheduling and cancelling appointments.
+    code: [{ path: apps/api/src/appointments }]
+  - id: appointments-controller
+    kind: controller
+    name: AppointmentsController
+    parent: appointments-module
+    summary: REST endpoints for appointments.
+    code: [{ path: apps/api/src/appointments/appointments.controller.ts, symbol: AppointmentsController }]
+  - id: appointments-service
+    kind: component
+    name: AppointmentsService
+    parent: appointments-module
+    summary: Applies the booking rules.
+    rules:
+      - A slot can hold a single appointment.
+      - Patients can cancel up to 24 hours before.
+    code: [{ path: apps/api/src/appointments/appointments.service.ts, symbol: AppointmentsService }]
+  - id: book-appointment
+    kind: method
+    name: bookAppointment()
+    parent: appointments-service
+    summary: Books a free slot and charges the deposit.
+    howItWorks:
+      - Checks that the slot is free
+      - Charges the deposit through the payment gateway
+      - Saves the appointment as CONFIRMED
+      - Publishes AppointmentBooked
+  - id: appointments-repo
+    kind: repository
+    name: AppointmentsRepository
+    parent: appointments-module
+    code: [{ path: apps/api/src/appointments/appointments.repository.ts, symbol: AppointmentsRepository }]
+  - { id: book-appointment-dto, kind: dto, name: BookAppointmentDto, parent: appointments-module, summary: Slot and patient chosen in the booking form. }
+  - { id: appointment-status, kind: enum, name: AppointmentStatus, parent: appointments-module, summary: "PENDING, CONFIRMED, CANCELLED." }
+  - { id: appointment-booked, kind: event, name: AppointmentBooked, parent: appointments-module, summary: Emitted after a booking is confirmed. }
+  - id: book-use-case
+    kind: use-case
+    name: Book an appointment
+    parent: appointments-module
+  - { id: cancel-use-case, kind: use-case, name: Cancel an appointment, parent: appointments-module }
+relations:
+  - { id: rel-ctrl-svc, type: calls, from: appointments-controller, to: appointments-service, via: [book-appointment-dto] }
+  - { id: rel-ctrl-jwt, type: uses, from: appointments-controller, to: jwt-guard }
+  - { id: rel-ctrl-roles, type: uses, from: appointments-controller, to: roles-guard }
+  - { id: rel-svc-repo, type: calls, from: appointments-service, to: appointments-repo }
+  - { id: rel-svc-status, type: uses, from: appointments-service, to: appointment-status }
+  - { id: rel-svc-billing, type: calls, from: appointments-service, to: billing-service, via: [payment-gateway] }
+  - { id: rel-svc-event, type: uses, from: appointments-service, to: appointment-booked }
+  - { id: rel-repo-writes, type: writes, from: appointments-repo, to: appointments-table }
+  - { id: rel-patient-book, type: participates-in, from: patient, to: book-use-case }
+  - { id: rel-patient-cancel, type: participates-in, from: patient, to: cancel-use-case }
+  - { id: rel-recep-cancel, type: participates-in, from: receptionist, to: cancel-use-case }

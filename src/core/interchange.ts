@@ -50,6 +50,7 @@ const CATEGORY_FILES: Record<string, string> = {
   infrastructure: 'infrastructure.yaml',
   system: 'systems.yaml',
   internal: 'components.yaml',
+  functional: 'components.yaml',
   behavior: 'components.yaml',
   data: 'data.yaml',
   business: 'business.yaml',

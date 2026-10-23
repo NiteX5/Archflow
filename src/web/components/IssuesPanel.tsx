@@ -1,6 +1,11 @@
+import { useState } from 'react';
 import type { AppState } from '../../core/api.js';
+import { api, RequestError } from '../api.js';
 
-export function IssuesPanel({ state }: { state: AppState }) {
+export function IssuesPanel({ state, onState }: { state: AppState; onState?: (s: AppState) => void }) {
+  const [migrating, setMigrating] = useState(false);
+  const [migrateError, setMigrateError] = useState<string | null>(null);
+  const needsMigration = state.issues.some((i) => i.code === 'migration-required');
   const errors = state.issues.filter((i) => i.severity === 'error');
   const warnings = state.issues.filter((i) => i.severity === 'warning');
   if (state.issues.length === 0) return null;
@@ -13,6 +18,28 @@ export function IssuesPanel({ state }: { state: AppState }) {
             : `The model contains ${errors.length} error(s) and no valid version has been loaded yet.`
           : `${warnings.length} warning(s)`}
       </strong>
+      {needsMigration && onState && (
+        <div className="actions">
+          <button
+            className="primary"
+            disabled={migrating}
+            onClick={async () => {
+              setMigrating(true);
+              setMigrateError(null);
+              try {
+                onState((await api.post<{ state: AppState }>('/api/migrate')).state);
+              } catch (e) {
+                setMigrateError(e instanceof RequestError ? e.message : 'Migration failed');
+              } finally {
+                setMigrating(false);
+              }
+            }}
+          >
+            Migrate the model
+          </button>
+          {migrateError && <span className="error-text">{migrateError}</span>}
+        </div>
+      )}
       <ul>
         {state.issues.map((i, n) => (
           <li key={n} className={i.severity}>

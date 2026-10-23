@@ -1,0 +1,4 @@
+schemaVersion: 2
+project:
+  name: Clinic appointments (example)
+  description: Fictional modular app used by Archflow docs and tests.

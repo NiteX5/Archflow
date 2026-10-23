@@ -1,0 +1,19 @@
+flow:
+  id: flow-booking
+  kind: business
+  name: Book an appointment
+  participants: [patient, clinic-web, appointments-controller, appointments-service, billing-service, booking-listener]
+  steps:
+    - { id: start, type: start, from: patient, action: Chooses a slot }
+    - { id: submit, from: clinic-web, to: appointments-controller, action: POST /appointments }
+    - id: free
+      type: decision
+      from: appointments-service
+      action: Is the slot still free?
+      branches:
+        - { condition: "no", next: rejected }
+        - { condition: "yes", next: charge }
+    - { id: charge, from: appointments-service, to: billing-service, action: Charge deposit, next: notify }
+    - { id: notify, from: appointments-service, to: booking-listener, action: Publish AppointmentBooked, next: done }
+    - { id: rejected, type: end, from: clinic-web, action: Shows "slot taken" }
+    - { id: done, type: end, from: patient, action: Receives confirmation e-mail }

@@ -25,7 +25,7 @@ export interface ApiError {
   issues?: Issue[];
 }
 
-export type HistoryOrigin = 'ui' | 'external' | 'import' | 'restore';
+export type HistoryOrigin = 'ui' | 'external' | 'import' | 'restore' | 'migrate';
 
 export interface FileChange {
   file: string;

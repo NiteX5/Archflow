@@ -1,0 +1,20 @@
+elements:
+  - { id: billing-module, kind: module, name: Billing module, parent: clinic-api, summary: Deposits and refunds. }
+  - id: billing-service
+    kind: component
+    name: BillingService
+    parent: billing-module
+    summary: Charges and refunds deposits.
+  - id: payment-gateway
+    kind: contract
+    name: PaymentGateway (port)
+    parent: billing-module
+    summary: Interface the billing module depends on; Stripe implements it.
+  - { id: stripe-adapter, kind: component, name: StripePaymentAdapter, parent: billing-module }
+  - { id: pay-use-case, kind: use-case, name: Pay the deposit, parent: billing-module }
+relations:
+  - { id: rel-billing-port, type: uses, from: billing-service, to: payment-gateway }
+  - { id: rel-adapter-impl, type: implements, from: stripe-adapter, to: payment-gateway }
+  - { id: rel-adapter-stripe, type: integrates-with, from: stripe-adapter, to: stripe }
+  - { id: rel-billing-writes, type: writes, from: billing-service, to: payments-table }
+  - { id: rel-patient-pay, type: participates-in, from: patient, to: pay-use-case }

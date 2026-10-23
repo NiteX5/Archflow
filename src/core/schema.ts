@@ -1,12 +1,16 @@
 /**
- * Native Archflow model schema, version 1.
+ * Native Archflow model schema, version 2.
+ *
+ * Version 2 adds functional dependencies (guards, DTOs, enums, contracts...),
+ * didactic fields, `uses`/`references` relations and process (BPMN-style) steps.
+ * Every version 1 model is a valid version 2 model; see migrate.ts.
  *
  * This module is isomorphic: it must not import Node APIs so that the browser
  * can reuse it (e.g. to validate an import before sending it to the server).
  */
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 export const MODEL_DIR = '.archflow';
 
 /** Stable identifier: lowercase slug, independent of names, paths or positions. */
@@ -17,7 +21,7 @@ export const idSchema = z
   .regex(ID_PATTERN, 'IDs must be lowercase slugs such as "api-gateway" or "svc.billing"');
 
 /**
- * Element kinds supported by schema v1, grouped by the semantic category that
+ * Element kinds supported by the schema, grouped by the semantic category that
  * views use to derive their content (spec §5). The category is derived from the
  * kind; it is never stored, so it cannot drift.
  */
@@ -36,6 +40,12 @@ export const ELEMENT_KINDS = {
   ],
   system: ['system', 'application', 'web-app', 'api', 'service', 'external-system', 'integration', 'domain'],
   internal: ['module', 'package', 'controller', 'component', 'repository', 'interface', 'library'],
+  /**
+   * Functional dependencies: code artifacts that provide behaviour across
+   * modules (access control, data contracts, shared vocabularies). They are
+   * shown where they are used, not as free-standing boxes.
+   */
+  functional: ['guard', 'middleware', 'policy', 'dto', 'enum', 'contract', 'event', 'value-object'],
   behavior: ['function', 'method', 'business-rule'],
   data: ['database', 'table', 'data-entity', 'schema'],
   business: ['actor', 'use-case', 'process'],
@@ -55,7 +65,7 @@ export function categoryOf(kind: ElementKind): ElementCategory {
   throw new Error(`Unknown element kind: ${kind}`);
 }
 
-/** Relation types supported by schema v1 (spec §5.7). New types require a schema bump. */
+/** Relation types supported by the schema (spec §5.7). New types require a schema bump. */
 export const RELATION_TYPES = [
   'depends-on',
   'calls',
@@ -68,8 +78,14 @@ export const RELATION_TYPES = [
   'receives-data-from',
   'participates-in',
   'integrates-with',
+  /** A component uses a functional dependency (guard, DTO, enum...). */
+  'uses',
+  /** Data reference between tables or entities (foreign key). */
+  'references',
 ] as const;
 export type RelationType = (typeof RELATION_TYPES)[number];
+
+export const CARDINALITIES = ['1-1', '1-n', 'n-1', 'n-n'] as const;
 
 export const PROVENANCE_SOURCES = ['manual', 'agent', 'code-observed', 'tool-inferred'] as const;
 export const VERIFICATION_STATUSES = ['verified', 'inferred', 'pending-review'] as const;
@@ -127,8 +143,13 @@ export const elementSchema = z.strictObject({
   id: idSchema,
   kind: z.enum(ALL_ELEMENT_KINDS as [ElementKind, ...ElementKind[]]),
   name: z.string().min(1).max(200),
+  /** What it is, in one sentence (shown first in the documentation panel). */
+  summary: z.string().min(1).max(300).optional(),
   description: z.string().min(1).optional(),
+  /** What it is for. */
   responsibility: z.string().min(1).optional(),
+  /** How it works, as ordered steps. */
+  howItWorks: z.array(z.string().min(1)).optional(),
   /** Grouping/containment: ID of the containing element. */
   parent: idSchema.optional(),
   tags: z.array(z.string().min(1)).optional(),
@@ -146,6 +167,10 @@ export const relationSchema = z.strictObject({
   from: idSchema,
   to: idSchema,
   description: z.string().min(1).optional(),
+  /** Functional dependencies involved in this relation (e.g. the guard and DTO of a call). */
+  via: z.array(idSchema).optional(),
+  /** Only for `references`: how many records relate on each side. */
+  cardinality: z.enum(CARDINALITIES).optional(),
   notes: z.array(noteSchema).optional(),
   provenance: provenanceSchema.optional(),
   metadata: metadataSchema.optional(),
@@ -174,14 +199,25 @@ export const overviewSchema = z.strictObject({
   unknowns: z.array(z.string().min(1)).optional(),
 });
 
+export const STEP_TYPES = ['start', 'task', 'decision', 'wait', 'end'] as const;
+
 const flowStepSchema = z.strictObject({
   id: idSchema,
+  /** Process notation; steps without a type are tasks. */
+  type: z.enum(STEP_TYPES).optional(),
   from: idSchema,
   to: idSchema.optional(),
   action: z.string().min(1),
   description: z.string().min(1).optional(),
   condition: z.string().min(1).optional(),
   result: z.string().min(1).optional(),
+  /** Step that follows (default: the next step in the list). */
+  next: idSchema.optional(),
+  /** Only for decisions: one outgoing path per condition. */
+  branches: z
+    .array(z.strictObject({ condition: z.string().min(1), next: idSchema }))
+    .min(1)
+    .optional(),
 });
 
 export const FLOW_KINDS = ['execution', 'business', 'data', 'event'] as const;
